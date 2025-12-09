@@ -84,3 +84,4 @@ CMakeLists.txt.user*
 .clangd/
 .cache/
 compile_commands.json
+ref
