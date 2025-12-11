@@ -18,6 +18,13 @@ qt_add_qml_module(appnicol
     QML_FILES
         Main.qml
         ui/ToolbarButton.qml
+    RESOURCES
+        resources.qrc
+        chrome/ntp/index.html
+        chrome/assets/logo_horizontal_dark.svg
+        chrome/assets/logo_light.svg
+        chrome/assets/logo_dark.svg
+        chrome/assets/logo_horizontal_light.svg
 )
 
 set_target_properties(appnicol PROPERTIES

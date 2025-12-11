@@ -2,5 +2,10 @@
 <RCC version="1.0">
   <qresource prefix="/">
     <file>ui/ToolbarButton.qml</file>
+    <file>chrome/assets/logo_horizontal_dark.svg</file>
+    <file>chrome/assets/logo_light.svg</file>
+    <file>chrome/assets/logo_dark.svg</file>
+    <file>chrome/assets/logo_horizontal_light.svg</file>
+    <file>chrome/ntp/index.html</file>
   </qresource>
 </RCC>
