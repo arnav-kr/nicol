@@ -7,42 +7,8 @@
   <title>New Tab</title>
   <link rel="shortcut icon" href="../assets/logo_dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
   <link rel="shortcut icon" href="../assets/logo_light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="../assets/styles/globals.css">
   <style>
-    :root {
-      --ntp-background-color: #ffffff;
-      --ntp-text-color: #010101;
-      --ntp-secondary-background-color: #f5f5f5;
-      --ntp-secondary-text-color: #3c4043;
-      --ntp-icon-color: #5f6368;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --ntp-background-color: #121212;
-        --ntp-text-color: #fafafa;
-        --ntp-secondary-background-color: #202124;
-        --ntp-secondary-text-color: #e8eaed;
-        --ntp-icon-color: #9aa0a6;
-      }
-      .ntp-logo-light {
-        display: none;
-      }
-      .ntp-logo-dark {
-        display: block !important;
-      }
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      color-scheme: light dark;
-      background-color: var(--ntp-background-color);
-    }
-
     .ntp-header {
       display: flex;
       justify-content: center;
@@ -105,7 +71,8 @@
       <img src="../assets/logo_horizontal_dark.svg" alt="Nicol Logo" class="ntp-logo ntp-logo-dark">
     </header>
 
-    <form action="https://google.com/search" method="get" class="ntp-search-form" onclick="this.querySelector('input').focus();">
+    <form action="https://google.com/search" method="get" class="ntp-search-form"
+      onclick="this.querySelector('input').focus();">
       <div class="ntp-search-icon">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
           stroke="currentColor">

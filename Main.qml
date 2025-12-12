@@ -9,7 +9,7 @@ ApplicationWindow {
     width: 1024; height: 768
     visible: true
     title: currentWebView && currentWebView.title ? currentWebView.title : "Nicol Browser"
-    property url ntpUrl: Qt.resolvedUrl("chrome/ntp/index.html")
+    property url ntpUrl: "nicol://new-tab/"
     color: "#1e1e1e"
 
     function addTab(url = ntpUrl.toString())
@@ -199,7 +199,7 @@ ColumnLayout {
                 onAccepted: {
                     let input = text.trim()
                     let targetUrl = ""
-                    if (["http", "https", "file"].some(p => input.startsWith(p)))
+                    if (["http", "https", "file", "view-source", "data", "blob", "about", "nicol"].some(p => input.startsWith(p)))
                     {
                         targetUrl = input
                         cursorPosition = 0

@@ -19,8 +19,10 @@ qt_add_qml_module(appnicol
         Main.qml
         ui/ToolbarButton.qml
     RESOURCES
-        resources.qrc
-        chrome/ntp/index.html
+        chrome/new-tab/index.html
+        chrome/error/404.html
+        chrome/error/offline.html
+        chrome/assets/styles/globals.css
         chrome/assets/logo_horizontal_dark.svg
         chrome/assets/logo_light.svg
         chrome/assets/logo_dark.svg
