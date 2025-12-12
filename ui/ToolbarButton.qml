@@ -1,21 +1,23 @@
 import QtQuick
 import QtQuick.Controls
 
-ToolButton {
-  implicitWidth: 24
-  implicitHeight: 24
+Button {
+  id: closeButton
+  implicitWidth: 30
+  implicitHeight: 30
+  flat: true
 
   property string tooltipText: ""
 
     ToolTip.visible: hovered && tooltipText.length > 0
-    ToolTip.delay: 1500
+    ToolTip.delay: 1000
     ToolTip.text: tooltipText
 
     background: Rectangle {
-      implicitWidth: 24
-      implicitHeight: 24
+      height: parent.height
+      width: parent.width
+      color: parent.enabled ? (parent.down ? "#3e3e3e" : (parent.hovered ? "#2e2e2e" : "transparent")) : "transparent"
       radius: 4
-      color: parent.down ? "#3e3e3e" : (parent.hovered ? "#2e2e2e" : "transparent")
       Behavior on color { ColorAnimation { duration: 100 } }
     }
 
@@ -24,6 +26,6 @@ ToolButton {
       font.pixelSize: 16
       horizontalAlignment: Text.AlignHCenter
       verticalAlignment: Text.AlignVCenter
-      color: "#fafafa"
+      color: parent.enabled ? "#dadada" : "#7a7a7a"
     }
   }

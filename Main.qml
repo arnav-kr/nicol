@@ -49,8 +49,12 @@ ColumnLayout {
                 text: model.title
                 property real calculatedWidth: (bar.width - 55) / (tabsModel.count || 1)
                 width: Math.min(240, Math.max(48, calculatedWidth))
-                checked: bar.currentIndex === index
+                // checked: bar.currentIndex === index
                 font.pixelSize: 14
+
+                ToolTip.visible: hovered
+                ToolTip.text: model.title
+                ToolTip.delay: 500
 
                 background: Rectangle {
                     color: tabBtn.checked ? "#2a2a2a" : (tabBtn.hovered ? "#252525" : "transparent")
@@ -114,14 +118,14 @@ ColumnLayout {
         }
         TabButton {
             id: newTabButton
-            width: 32
-            height: 32
-            anchors.leftMargin: 8
+            width: 28
+            height: 28
+            Layout.leftMargin: 8
             font.pixelSize: 18
-            
+
             background: Rectangle {
                 color: newTabButton.hovered ? "#3d3d3d" : "#2f2f2f"
-                radius: 4
+                radius: 6
                 Behavior on color { ColorAnimation { duration: 100 } }
             }
             contentItem: Text {
@@ -135,9 +139,17 @@ ColumnLayout {
         }
     }
     Rectangle {
-        height: 32
+        height: 40
         Layout.fillWidth: true
         color: "#1e1e1e"
+
+        Rectangle {
+            width: parent.width
+            height: 1
+            color: "#4d4d4d"
+            opacity: 0.6
+            anchors.bottom: parent.bottom
+        }
         RowLayout {
             width: parent.width
             anchors.verticalCenter: parent.verticalCenter
@@ -145,10 +157,12 @@ ColumnLayout {
             ToolbarButton {
                 Layout.leftMargin: 16
                 text: "<"
+                enabled: currentWebView && currentWebView.canGoBack ? currentWebView.canGoBack : false
                 onClicked: currentWebView.goBack()
             }
             ToolbarButton {
                 text: ">"
+                enabled: currentWebView && currentWebView.canGoForward ? currentWebView.canGoForward : false
                 onClicked: currentWebView.goForward()
             }
             ToolbarButton {
@@ -158,64 +172,75 @@ ColumnLayout {
             Item {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 32
-                Layout.maximumWidth: 84
-                Layout.minimumWidth: 32
             }
-            Rectangle {
-                Layout.minimumWidth: 320
-                Layout.preferredWidth: 420
-                Layout.maximumWidth: parent.width - 480
+            TextField {
+                id: urlInput
                 Layout.fillWidth: true
-                height: 24
-                color: "#2e2e2e"
-                radius: 4
-                TextInput {
-                    id: urlInput
-                    anchors.fill: parent
-                    horizontalAlignment: Text.AlignLeft
-                    padding: 6
-                    topPadding: 4
-                    bottomPadding: 4
-                    color: "#fafafa"
-                    font.pixelSize: 14
-                    text: currentWebView && currentWebView.url ? currentWebView.url : ""
-                    clip: true
-                    property string placeholderText: "Search or enter address"
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            leftPadding: 8
-                            text: urlInput.placeholderText
-                            color: "#5d5d5d"
-                            visible: !urlInput.text
-                        }
+                Layout.preferredWidth: 420
+                Layout.maximumWidth: 800
+                Layout.preferredHeight: parent.height
+                placeholderText: "Search or enter address"
+                padding: 4
+
+                text: currentWebView && currentWebView.url ? currentWebView.url : ""
+
+                onActiveFocusChanged: {
+                    cursorPosition = 0
+                }
+
+                background: Rectangle {
+                    color: parent.activeFocus ? "#333333" : "#2a2a2a"
+                    radius: 4
+                }
+                color: "#fafafa"
+                font.pixelSize: 15
+                selectByMouse: true
+
+                onAccepted: {
+                    let input = text.trim()
+                    let targetUrl = ""
+                    if (["http", "https", "file"].some(p => input.startsWith(p)))
+                    {
+                        targetUrl = input
+                        cursorPosition = 0
                     }
-                    onActiveFocusChanged: {
-                        if (!activeFocus)
+                    else if (input.includes(".") && !input.includes(" ")) {targetUrl = "https://" + input}
+                        else { targetUrl = "https://google.com/search?q=" + input }
+                        console.log("Navigating to: " + targetUrl)
+
+                        if (currentWebView)
                         {
+                            currentWebView.url = targetUrl
+                            currentWebView.forceActiveFocus()
                             cursorPosition = 0
                         }
                     }
-                    Keys.onReturnPressed: {
-                        if (["http:", "https:", "blob:", "data:"].some(prefix => urlInput.text.startsWith(prefix)))
-                        {
-                            currentWebView.url = urlInput.text
-                        }
-                        else {
-                            currentWebView.url = "https://google.com/search?q=%1".arg(urlInput.text)
-                        }
-                        currentWebView.forceActiveFocus()
-                    }
                 }
-
                 Item {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 32
-                    Layout.maximumWidth: 84
-                    Layout.minimumWidth: 32
                 }
                 ToolbarButton {
-                    text: "✕"
-                    onClicked: Qt.quit()
+                    Layout.rightMargin: 16
+                    text: "☰"
+                    onClicked: {
+                        menu.popup()
+                    }
+                    Menu {
+                        id: menu
+                        MenuItem {
+                            text: "New Tab"
+                            onTriggered: { addTab() }
+                        }
+                        MenuItem {
+                            text: "Close Tab"
+                            onTriggered: { closeTab(bar.currentIndex) }
+                        }
+                        MenuItem {
+                            text: "Quit"
+                            onTriggered: { Qt.quit() }
+                        }
+                    }
                 }
             }
         }
@@ -242,6 +267,9 @@ ColumnLayout {
                 }
             }
             onTitleChanged: model.title = title || ""
+            onLoadingChanged: {
+                urlInput.cursorPosition = 0
+            }
             onIconChanged: model.icon = icon.toString() || ""
             lifecycleState: visible ? WebEngineView.LifecycleState.Active : WebEngineView.LifecycleState.Frozen
         }
