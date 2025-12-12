@@ -40,14 +40,23 @@ ColumnLayout {
     TabBar {
         id: bar
         Layout.fillWidth: true
-        height: 36
+        padding: 4
+        spacing: 4
         Repeater {
             model: tabsModel
             TabButton {
                 id: tabBtn
                 text: model.title
-                width: implicitWidth + 42
+                property real calculatedWidth: (bar.width - 55) / (tabsModel.count || 1)
+                width: Math.min(240, Math.max(48, calculatedWidth))
                 checked: bar.currentIndex === index
+                font.pixelSize: 14
+
+                background: Rectangle {
+                    color: tabBtn.checked ? "#2a2a2a" : (tabBtn.hovered ? "#252525" : "transparent")
+                    radius: 4
+                    Behavior on color { ColorAnimation { duration: 100 } }
+                }
 
                 contentItem: RowLayout {
                     spacing: 8
@@ -75,26 +84,53 @@ ColumnLayout {
                 }
 
                 Button {
-                    text: "×"
+                    id: closeButton
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.rightMargin: 6
-                    anchors.leftMargin: 6
+                    anchors.leftMargin: 4
+
                     background: Rectangle {
-                        color: "#3d3d3d"
-                        radius: 2
+                        color: closeButton.hovered ? "#3d3d3d" : "transparent"
+                        radius: 4
+                        Behavior on color { ColorAnimation { duration: 100 } }
                     }
+
+                    contentItem: Text {
+                        text: "✕"
+                        font.pixelSize: 16
+                        color: "#dadada"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
                     flat: true
                     width: 24
                     height: 24
                     onClicked: { closeTab(index) }
-                    visible: bar.currentIndex == index
+                    visible: tabBtn.hovered || tabBtn.checked
                 }
             }
         }
         TabButton {
-            text: "+"
-            width: 46
+            id: newTabButton
+            width: 32
+            height: 32
+            anchors.leftMargin: 8
+            font.pixelSize: 18
+            
+            background: Rectangle {
+                color: newTabButton.hovered ? "#3d3d3d" : "#2f2f2f"
+                radius: 4
+                Behavior on color { ColorAnimation { duration: 100 } }
+            }
+            contentItem: Text {
+                text: "+"
+                font: newTabButton.font
+                color: "#dadada"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
             onClicked: { addTab() }
         }
     }
