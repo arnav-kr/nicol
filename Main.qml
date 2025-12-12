@@ -272,7 +272,12 @@ ApplicationWindow {
                 }
                 onIconChanged: model.icon = icon.toString() || ""
                 lifecycleState: visible ? WebEngineView.LifecycleState.Active : WebEngineView.LifecycleState.Frozen
+                onNewWindowRequested: function(request) {
+                addTab(request.requestedUrl.toString());
+                let newTabWebView = webviewStack.children[webviewStack.children.length - 1];
+                request.openIn(newTabWebView);
             }
         }
     }
+}
 }
