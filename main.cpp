@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   QWebEngineUrlScheme scheme("nicol");
   scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
   scheme.setFlags(QWebEngineUrlScheme::SecureScheme |
-                  QWebEngineUrlScheme::LocalScheme |
+                  QWebEngineUrlScheme::CorsEnabled |
                   QWebEngineUrlScheme::LocalAccessAllowed);
   QWebEngineUrlScheme::registerScheme(scheme);
 
