@@ -29,15 +29,8 @@ ApplicationWindow {
 }
 
 
-ListModel {
-    id: tabsModel
-}
-
-Component.onCompleted: tabsModel.append({
-"title": "Google",
-"address": ntpUrl.toString(),
-"icon": ""
-})
+ListModel { id: tabsModel }
+Component.onCompleted: tabsModel.append({ "title": "Google", "address": ntpUrl.toString(), "icon": "" })
 
 property Item currentWebView: webviewStack.children[bar.currentIndex]
 
@@ -54,7 +47,7 @@ ColumnLayout {
                 id: tabBtn
                 text: model.title
                 width: implicitWidth + 42
-                // checked: bar.currentIndex === index
+                checked: bar.currentIndex === index
 
                 contentItem: RowLayout {
                     spacing: 8
@@ -123,8 +116,8 @@ ColumnLayout {
                 onClicked: currentWebView.goForward()
             }
             ToolbarButton {
-                text: "⟳"
-                onClicked: currentWebView.reload()
+                text: currentWebView && currentWebView.loading ? "✕" : "⟳"
+                onClicked: currentWebView && currentWebView.loading ? currentWebView.stop() : currentWebView.reload()
             }
             Item {
                 Layout.fillWidth: true
@@ -194,21 +187,28 @@ ColumnLayout {
     StackLayout {
         id: webviewStack
         anchors.fill: parent
-        currentIndex: bar.currentIndex
+        currentIndex: bar.currentIndex || 0
         Repeater {
             model: tabsModel
             WebEngineView {
-                url: model.address
-                onUrlChanged: {
-                    if (model.address !== url.toString())
+                Component.onCompleted: {
+                    if (model.address)
                     {
-                        model.address = url.toString()
-                    }
+                        url = model.address
+                    } else {
+                    url = ntpUrl
                 }
-                onTitleChanged: model.title = title || ""
-                onIconChanged: model.icon = icon.toString() || ""
-                lifecycleState: visible ? WebEngineView.LifecycleState.Active : WebEngineView.LifecycleState.Frozen
             }
+            onUrlChanged: {
+                if (model.address !== url.toString())
+                {
+                    model.address = url.toString()
+                }
+            }
+            onTitleChanged: model.title = title || ""
+            onIconChanged: model.icon = icon.toString() || ""
+            lifecycleState: visible ? WebEngineView.LifecycleState.Active : WebEngineView.LifecycleState.Frozen
         }
     }
+}
 }
