@@ -1,283 +1,476 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
-import "ui"
+import QtQuick.Layouts
 import QtWebEngine
+import "ui"
 
 ApplicationWindow {
     id: window
-    width: 1024; height: 768
-    visible: true
-    title: currentWebView && currentWebView.title ? currentWebView.title : "Nicol Browser"
+
     property url ntpUrl: "nicol://new-tab/"
-        color: "#1e1e1e"
+    property Item currentWebView: webviewStack.children[bar.currentIndex]
 
-        function addTab(url = ntpUrl.toString())
-        {
-            tabsModel.append({ "title": "New Tab", "address": url, "icon": "" })
-            bar.currentIndex = tabsModel.count - 1
-        }
+    function addTab(url = ntpUrl.toString()) {
+        tabsModel.append({
+            "title": "New Tab",
+            "address": url,
+            "icon": ""
+        });
+        bar.currentIndex = tabsModel.count - 1;
+    }
 
-        function closeTab(index)
-        {
-            if (tabsModel.count > 1)
-            {
-                tabsModel.remove(index)
-            } else {
-            Qt.quit()
+    function closeTab(index) {
+        if (tabsModel.count > 1) {
+            tabsModel.remove(index);
+            bar.currentIndex = tabsModel.count - 1;
+        } else {
+            Qt.quit();
         }
     }
 
+    width: 1024
+    height: 768
+    visible: true
+    title: currentWebView && currentWebView.title ? currentWebView.title : "Nicol Browser"
+    color: "#1e1e1e"
+    Component.onCompleted: tabsModel.append({
+        "title": "New Tab",
+        "address": ntpUrl.toString(),
+        "icon": ""
+    })
 
-    ListModel { id: tabsModel }
-    Component.onCompleted: tabsModel.append({ "title": "Google", "address": ntpUrl.toString(), "icon": "" })
+    ListModel {
+        id: tabsModel
+    }
 
-    property Item currentWebView: webviewStack.children[bar.currentIndex]
+    StackLayout {
+        id: webviewStack
 
-    header:
-    ColumnLayout {
-        spacing: 0
-        TabBar {
-            id: bar
-            Layout.fillWidth: true
-            padding: 4
-            spacing: 4
-            Repeater {
-                model: tabsModel
-                TabButton {
-                    id: tabBtn
-                    text: model.title
-                    property real calculatedWidth: (bar.width - 55) / (tabsModel.count || 1)
-                    width: Math.min(240, Math.max(48, calculatedWidth))
-                    // checked: bar.currentIndex === index
-                    font.pixelSize: 14
+        anchors.fill: parent
+        currentIndex: bar.currentIndex || 0
 
-                    ToolTip.visible: hovered
-                    ToolTip.text: model.title
-                    ToolTip.delay: 500
+        Repeater {
+            id: webViewRepeater
 
-                    background: Rectangle {
-                        color: tabBtn.checked ? "#2a2a2a" : (tabBtn.hovered ? "#252525" : "transparent")
-                        radius: 4
-                        Behavior on color { ColorAnimation { duration: 100 } }
-                    }
+            model: tabsModel
 
-                    contentItem: RowLayout {
-                        spacing: 8
-                        anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 32
+            WebEngineView {
+                Component.onCompleted: {
+                    if (model.address)
+                        url = model.address;
+                    else
+                        url = ntpUrl;
+                }
+                onUrlChanged: {
+                    if (model.address !== url.toString())
+                        model.address = url.toString();
 
-                        Image {
-                            source: model.icon
-                            Layout.preferredWidth: 16
-                            Layout.preferredHeight: 16
-                            sourceSize: Qt.size(16, 16)
-                            fillMode: Image.PreserveAspectFit
-                            visible: model.icon !== ""
-                        }
+                }
+                onTitleChanged: model.title = title || ""
+                onLoadingChanged: {
+                    urlInput.cursorPosition = 0;
+                }
+                onIconChanged: model.icon = icon.toString() || ""
+                lifecycleState: visible ? WebEngineView.LifecycleState.Active : WebEngineView.LifecycleState.Frozen
+                onNewWindowRequested: function(request) {
+                    addTab("");
+                    const newTabWebView = webViewRepeater.itemAt(tabsModel.count - 1);
+                    if (newTabWebView)
+                        request.openIn(newTabWebView);
 
-                        Text {
-                            text: model.title
-                            color: tabBtn.checked ? "#ffffff" : "#a0a0a0"
-                            font: tabBtn.font
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-
-                    Button {
-                        id: closeButton
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.rightMargin: 6
-                        anchors.leftMargin: 4
-
-                        background: Rectangle {
-                            color: closeButton.hovered ? "#3d3d3d" : "transparent"
-                            radius: 4
-                            Behavior on color { ColorAnimation { duration: 100 } }
-                        }
-
-                        contentItem: Text {
-                            text: "✕"
-                            font.pixelSize: 16
-                            color: "#dadada"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-
-                        flat: true
-                        width: 24
-                        height: 24
-                        onClicked: { closeTab(index) }
-                        visible: tabBtn.hovered || tabBtn.checked
-                    }
                 }
             }
-            TabButton {
-                id: newTabButton
-                width: 28
+
+        }
+
+    }
+
+    header: ColumnLayout {
+        spacing: 0
+
+        Item {
+            id: bar
+
+            property int currentIndex: 0
+            property int spacing: 6
+            property bool overflowing: tabRow.width > (parent.width - newTabButton.width - (spacing * 3))
+
+            Layout.fillWidth: true
+            Layout.preferredHeight: 36
+            Layout.topMargin: 4
+            Layout.leftMargin: bar.spacing
+            Layout.rightMargin: bar.spacing
+
+            Button {
+                id: leftScrollBtn
+
+                z: 3
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                visible: bar.overflowing
+                width: visible ? 16 : 0
                 height: 28
-                Layout.leftMargin: 8
-                font.pixelSize: 18
+                flat: true
+                enabled: tabFlickable.contentX > 1
+                opacity: enabled ? 1 : 0.5
+                onClicked: {
+                    var newPos = Math.max(0, tabFlickable.contentX - 200);
+                    tabFlickable.contentX = newPos;
+                }
 
                 background: Rectangle {
-                    color: newTabButton.hovered ? "#3d3d3d" : "#2f2f2f"
-                    radius: 6
-                    Behavior on color { ColorAnimation { duration: 100 } }
+                    color: leftScrollBtn.hovered && leftScrollBtn.enabled ? "#3d3d3d" : "#003d3d3d"
+                    radius: 4
                 }
+
                 contentItem: Text {
-                    text: "+"
-                    font: newTabButton.font
+                    text: "〈"
+                    font.pixelSize: 14
                     color: "#dadada"
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-                onClicked: { addTab() }
+
             }
+
+            Flickable {
+                id: tabFlickable
+
+                Layout.preferredWidth: parent.width - newTabButton.width - (bar.spacing * 4) - (leftScrollBtn.visible ? leftScrollBtn.width : 0) - (rightScrollBtn.visible ? rightScrollBtn.width : 0)
+                height: parent.height
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: leftScrollBtn.visible ? leftScrollBtn.right : parent.left
+                anchors.leftMargin: rightScrollBtn.visible ? bar.spacing : 0
+                anchors.right: rightScrollBtn.visible ? rightScrollBtn.left : newTabButton.left
+                anchors.rightMargin: leftScrollBtn.visible ? bar.spacing : 0
+                contentWidth: tabRow.width
+                contentHeight: parent.height
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                onContentWidthChanged: {
+                    if (contentWidth > width && !movingHorizontally)
+                        contentX = contentWidth - width;
+
+                }
+
+                RowLayout {
+                    id: tabRow
+
+                    height: parent.height
+                    spacing: 4
+
+                    Repeater {
+                        model: tabsModel
+
+                        AbstractButton {
+                            id: tabBtn
+
+                            property bool isCurrent: bar.currentIndex === index
+
+                            Layout.preferredHeight: 34
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.preferredWidth: {
+                                let availableW = bar.width - 64;
+                                let calculatedWidth = availableW / (tabsModel.count || 1);
+                                return Math.min(240, Math.max(84, calculatedWidth));
+                            }
+                            onClicked: bar.currentIndex = index
+
+                            background: Rectangle {
+                                color: tabBtn.isCurrent ? "#2a2a2a" : (tabBtn.hovered ? "#282828" : "#002a2a2a")
+                                radius: 6
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 100
+                                    }
+
+                                }
+
+                            }
+
+                            contentItem: RowLayout {
+                                spacing: 8
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 6
+
+                                Image {
+                                    source: model.icon
+                                    Layout.preferredWidth: 16
+                                    Layout.preferredHeight: 16
+                                    sourceSize: Qt.size(16, 16)
+                                    fillMode: Image.PreserveAspectFit
+                                    visible: model.icon !== ""
+                                }
+
+                                Text {
+                                    text: model.title
+                                    color: tabBtn.isCurrent ? "#ffffff" : "#a0a0a0"
+                                    font.pixelSize: 14
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                Button {
+                                    id: closeButton
+
+                                    Layout.preferredWidth: 24
+                                    Layout.preferredHeight: 24
+                                    flat: true
+                                    visible: tabBtn.hovered || tabBtn.isCurrent
+                                    onClicked: closeTab(index)
+
+                                    background: Rectangle {
+                                        color: closeButton.hovered ? "#3d3d3d" : "#003d3d3d"
+                                        radius: 4
+
+                                        Behavior on color {
+                                            ColorAnimation {
+                                                duration: 100
+                                            }
+
+                                        }
+
+                                    }
+
+                                    contentItem: Text {
+                                        text: "✕"
+                                        font.pixelSize: 16
+                                        color: "#dadada"
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+                Behavior on contentX {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.OutQuad
+                    }
+
+                }
+
+            }
+
+            Button {
+                id: rightScrollBtn
+
+                z: 3
+                anchors.right: newTabButton.left
+                anchors.rightMargin: bar.spacing
+                anchors.leftMargin: bar.spacing
+                anchors.verticalCenter: parent.verticalCenter
+                visible: bar.overflowing
+                width: visible ? 16 : 0
+                height: 28
+                flat: true
+                enabled: (tabFlickable.contentX + tabFlickable.width) < (tabFlickable.contentWidth - 2)
+                opacity: enabled ? 1 : 0.5
+                onClicked: {
+                    var newPos = Math.min(tabFlickable.contentWidth - tabFlickable.width, tabFlickable.contentX + 200);
+                    tabFlickable.contentX = newPos;
+                }
+
+                background: Rectangle {
+                    color: rightScrollBtn.hovered && rightScrollBtn.enabled ? "#3d3d3d" : "#003d3d3d"
+                    radius: 4
+                }
+
+                contentItem: Text {
+                    text: "〉"
+                    font.pixelSize: 14
+                    color: "#dadada"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+            }
+
+            Item {
+                id: dummyItem
+
+                width: 0
+                anchors.left: tabFlickable.right
+            }
+
+            Button {
+                id: newTabButton
+
+                z: 3
+                width: 32
+                height: 32
+                anchors.verticalCenter: parent.verticalCenter
+                x: bar.overflowing ? (parent.width - width) : (tabRow.width + bar.spacing)
+                onClicked: addTab()
+
+                background: Rectangle {
+                    color: newTabButton.hovered ? "#3d3d3d" : "#2f2f2f"
+                    radius: 6
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 100
+                        }
+
+                    }
+
+                }
+
+                contentItem: Text {
+                    text: "+"
+                    font.pixelSize: 18
+                    color: "#dadada"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+            }
+
         }
+
         Rectangle {
-            height: 40
+            id: urlBar
+
+            height: 44
             Layout.fillWidth: true
             color: "#1e1e1e"
 
-            Rectangle {
-                width: parent.width
-                height: 1
-                color: "#4d4d4d"
-                opacity: 0.6
-                anchors.bottom: parent.bottom
-            }
             RowLayout {
                 width: parent.width
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 0
+
                 ToolbarButton {
                     Layout.leftMargin: 16
                     text: "<"
                     enabled: currentWebView && currentWebView.canGoBack ? currentWebView.canGoBack : false
                     onClicked: currentWebView.goBack()
                 }
+
                 ToolbarButton {
                     text: ">"
                     enabled: currentWebView && currentWebView.canGoForward ? currentWebView.canGoForward : false
                     onClicked: currentWebView.goForward()
                 }
+
                 ToolbarButton {
                     text: currentWebView && currentWebView.loading ? "✕" : "⟳"
                     onClicked: currentWebView && currentWebView.loading ? currentWebView.stop() : currentWebView.reload()
                 }
+
                 Item {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 32
                 }
+
                 TextField {
                     id: urlInput
+
                     Layout.fillWidth: true
                     Layout.preferredWidth: 420
                     Layout.maximumWidth: 800
-                    Layout.preferredHeight: parent.height
+                    Layout.preferredHeight: 32
                     placeholderText: "Search or enter address"
-                    padding: 4
-
+                    // padding: 4
                     text: currentWebView && currentWebView.url ? currentWebView.url : ""
-
                     onActiveFocusChanged: {
-                        if (!activeFocus) cursorPosition = 0
+                        if (!activeFocus)
+                            cursorPosition = 0;
+
+                    }
+                    color: "#fafafa"
+                    font.pixelSize: 15
+                    selectByMouse: true
+                    onAccepted: {
+                        let input = text.trim();
+                        let targetUrl = "";
+                        if (["http", "https", "file", "view-source", "data", "blob", "about", "nicol"].some((p) => {
+                            return input.startsWith(p);
+                        })) {
+                            targetUrl = input;
+                            cursorPosition = 0;
+                        } else if (input.includes(".") && !input.includes(" ")) {
+                            targetUrl = "https://" + input;
+                        } else {
+                            targetUrl = "https://google.com/search?q=" + input;
+                        }
+                        console.log("Navigating to: " + targetUrl);
+                        if (currentWebView) {
+                            currentWebView.url = targetUrl;
+                            currentWebView.forceActiveFocus();
+                            cursorPosition = 0;
+                        }
                     }
 
                     background: Rectangle {
                         color: parent.activeFocus ? "#333333" : "#2a2a2a"
                         radius: 4
                     }
-                    color: "#fafafa"
-                    font.pixelSize: 15
-                    selectByMouse: true
 
-                    onAccepted: {
-                        let input = text.trim()
-                        let targetUrl = ""
-                        if (["http", "https", "file", "view-source", "data", "blob", "about", "nicol"].some(p => input.startsWith(p)))
-                        {
-                            targetUrl = input
-                            cursorPosition = 0
-                        }
-                        else if (input.includes(".") && !input.includes(" ")) {targetUrl = "https://" + input}
-                            else { targetUrl = "https://google.com/search?q=" + input }
-                            console.log("Navigating to: " + targetUrl)
+                }
 
-                            if (currentWebView)
-                            {
-                                currentWebView.url = targetUrl
-                                currentWebView.forceActiveFocus()
-                                cursorPosition = 0
-                            }
-                        }
-                    }
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.preferredWidth: 32
-                    }
-                    ToolbarButton {
-                        Layout.rightMargin: 16
-                        text: "☰"
-                        onClicked: {
-                            menu.popup()
-                        }
-                        Menu {
-                            id: menu
-                            MenuItem {
-                                text: "New Tab"
-                                onTriggered: { addTab() }
-                            }
-                            MenuItem {
-                                text: "Close Tab"
-                                onTriggered: { closeTab(bar.currentIndex) }
-                            }
-                            MenuItem {
-                                text: "Quit"
-                                onTriggered: { Qt.quit() }
-                            }
-                        }
-                    }
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 32
                 }
+
+                ToolbarButton {
+                    Layout.rightMargin: 16
+                    text: "☰"
+                    onClicked: {
+                        menu.popup();
+                    }
+
+                    Menu {
+                        id: menu
+
+                        MenuItem {
+                            text: "New Tab"
+                            onTriggered: {
+                                addTab();
+                            }
+                        }
+
+                        MenuItem {
+                            text: "Close Tab"
+                            onTriggered: {
+                                closeTab(bar.currentIndex);
+                            }
+                        }
+
+                        MenuItem {
+                            text: "Quit"
+                            onTriggered: {
+                                Qt.quit();
+                            }
+                        }
+
+                    }
+
+                }
+
             }
+
         }
-        StackLayout {
-            id: webviewStack
-            anchors.fill: parent
-            currentIndex: bar.currentIndex || 0
-            Repeater {
-                model: tabsModel
-                WebEngineView {
-                    Component.onCompleted: {
-                        if (model.address)
-                        {
-                            url = model.address
-                        } else {
-                        url = ntpUrl
-                    }
-                }
-                onUrlChanged: {
-                    if (model.address !== url.toString())
-                    {
-                        model.address = url.toString()
-                    }
-                }
-                onTitleChanged: model.title = title || ""
-                onLoadingChanged: {
-                    urlInput.cursorPosition = 0
-                }
-                onIconChanged: model.icon = icon.toString() || ""
-                lifecycleState: visible ? WebEngineView.LifecycleState.Active : WebEngineView.LifecycleState.Frozen
-                onNewWindowRequested: function(request) {
-                addTab(request.requestedUrl.toString());
-                let newTabWebView = webviewStack.children[webviewStack.children.length - 1];
-                request.openIn(newTabWebView);
-            }
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 1
+            color: "#11d0d0d0"
+            anchors.top: urlBar.bottom
         }
+
     }
-}
+
 }

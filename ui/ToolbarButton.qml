@@ -3,8 +3,8 @@ import QtQuick.Controls
 
 Button {
   id: closeButton
-  implicitWidth: 30
-  implicitHeight: 30
+  implicitWidth: 32
+  implicitHeight: 32
   flat: true
 
   property string tooltipText: ""
@@ -16,8 +16,8 @@ Button {
     background: Rectangle {
       height: parent.height
       width: parent.width
-      color: parent.enabled ? (parent.down ? "#3e3e3e" : (parent.hovered ? "#2e2e2e" : "transparent")) : "transparent"
-      radius: 4
+      color: parent.enabled ? (parent.down ? "#3e3e3e" : (parent.hovered ? "#2e2e2e" : "#002e2e2e")) : "transparent"
+      radius: 6
       Behavior on color { ColorAnimation { duration: 100 } }
     }
 
