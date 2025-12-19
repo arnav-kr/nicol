@@ -5,7 +5,11 @@
 #include <QIODevice>
 #include <QMimeDatabase>
 #include <QQmlApplicationEngine>
+#include <QRegularExpression>
+#include <QSettings>
+#include <QWebEngineClientHints>
 #include <QWebEngineProfile>
+#include <QWebEngineSettings>
 #include <QWebEngineUrlRequestJob>
 #include <QWebEngineUrlScheme>
 #include <QWebEngineUrlSchemeHandler>
@@ -48,7 +52,7 @@ public:
       path += "index.html";
     }
 
-    qDebug() << "[internal url req] host:" << host << " Path:" << path;
+    // qDebug() << "[internal url req] host:" << host << " Path:" << path;
 
     QString resourcePath = QStringLiteral(":/qt/qml/nicol/chrome");
 
@@ -60,7 +64,7 @@ public:
 
     resourcePath.replace("//", "/");
 
-    qDebug() << "[internal url req] returning:" << resourcePath;
+    // qDebug() << "[internal url req] returning:" << resourcePath;
 
     QFile file(resourcePath);
 
@@ -82,6 +86,9 @@ public:
 };
 
 int main(int argc, char *argv[]) {
+  QSettings settings("config.ini", QSettings::IniFormat);
+  QString version = settings.value("browser/version", "1.0.0").toString();
+
   QWebEngineUrlScheme scheme("nicol");
   scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
   scheme.setFlags(QWebEngineUrlScheme::SecureScheme |
@@ -91,10 +98,30 @@ int main(int argc, char *argv[]) {
 
   QtWebEngineQuick::initialize();
   QGuiApplication app(argc, argv);
+  auto profile = QWebEngineProfile::defaultProfile();
 
   NicolSchemeHandler *handler = new NicolSchemeHandler(&app);
-  QWebEngineProfile::defaultProfile()->installUrlSchemeHandler("nicol",
-                                                               handler);
+  profile->installUrlSchemeHandler("nicol", handler);
+
+  QString UA = profile->httpUserAgent();
+  QRegularExpression re("QtWebEngine/\\d+\\.\\d+\\.\\d+");
+  QString nicolUA = UA.replace(re, "");
+  nicolUA = nicolUA.simplified() + " Nicol/" + version;
+  profile->setHttpUserAgent(nicolUA);
+
+  profile->setPersistentCookiesPolicy(
+      QWebEngineProfile::AllowPersistentCookies);
+  profile->setPersistentStoragePath(qApp->applicationDirPath() + "/userdata");
+
+  profile->settings()->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled,
+                                    true);
+  profile->settings()->setAttribute(
+      QWebEngineSettings::FullScreenSupportEnabled, true);
+  profile->settings()->setAttribute(
+      QWebEngineSettings::Accelerated2dCanvasEnabled, true);
+  profile->settings()->setAttribute(QWebEngineSettings::WebGLEnabled, true);
+  profile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+  profile->settings()->setAttribute(QWebEngineSettings::PdfViewerEnabled, true);
 
   QQmlApplicationEngine engine;
   QObject::connect(

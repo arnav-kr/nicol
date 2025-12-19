@@ -8,7 +8,7 @@ ApplicationWindow {
     id: window
 
     property url ntpUrl: "nicol://new-tab/"
-    property Item currentWebView: webviewStack.children[bar.currentIndex]
+    property Item currentWebView: (webViewRepeater.count > bar.currentIndex && bar.currentIndex >= 0) ? webViewRepeater.itemAt(bar.currentIndex) : null
 
     function addTab(url = ntpUrl.toString()) {
         tabsModel.append({
@@ -17,12 +17,16 @@ ApplicationWindow {
             "icon": ""
         });
         bar.currentIndex = tabsModel.count - 1;
+        console.log("Added new tab with URL: " + url, " Current tab count: " + tabsModel.count, " Current index: " + bar.currentIndex, "WebView: ", currentWebView, "WebView URL: ", currentWebView ? currentWebView.url : "null", tabsModel.get(bar.currentIndex).address);
     }
 
     function closeTab(index) {
         if (tabsModel.count > 1) {
+            if (index === bar.currentIndex)
+                bar.currentIndex = Math.max(0, index - 1);
+            else if (index < bar.currentIndex)
+                bar.currentIndex--;
             tabsModel.remove(index);
-            bar.currentIndex = tabsModel.count - 1;
         } else {
             Qt.quit();
         }
@@ -33,11 +37,9 @@ ApplicationWindow {
     visible: true
     title: currentWebView && currentWebView.title ? currentWebView.title : "Nicol Browser"
     color: "#1e1e1e"
-    Component.onCompleted: tabsModel.append({
-        "title": "New Tab",
-        "address": ntpUrl.toString(),
-        "icon": ""
-    })
+    Component.onCompleted: {
+        addTab();
+    }
 
     ListModel {
         id: tabsModel
@@ -55,12 +57,7 @@ ApplicationWindow {
             model: tabsModel
 
             WebEngineView {
-                Component.onCompleted: {
-                    if (model.address)
-                        url = model.address;
-                    else
-                        url = ntpUrl;
-                }
+                url: (model.address && model.address !== "") ? model.address : ntpUrl
                 onUrlChanged: {
                     if (model.address !== url.toString())
                         model.address = url.toString();
@@ -69,6 +66,11 @@ ApplicationWindow {
                 onTitleChanged: model.title = title || ""
                 onLoadingChanged: {
                     urlInput.cursorPosition = 0;
+                }
+                onVisibleChanged: {
+                    if (visible)
+                        forceActiveFocus();
+
                 }
                 onIconChanged: model.icon = icon.toString() || ""
                 lifecycleState: visible ? WebEngineView.LifecycleState.Active : WebEngineView.LifecycleState.Frozen
@@ -377,21 +379,31 @@ ApplicationWindow {
                 TextField {
                     id: urlInput
 
+                    function updateBar() {
+                        if (!currentWebView || !currentWebView.url) {
+                            text = "";
+                            return ;
+                        }
+                        let urlStr = currentWebView.url.toString();
+                        text = (urlStr === ntpUrl.toString()) ? "" : urlStr;
+                        cursorPosition = 0;
+                    }
+
                     Layout.fillWidth: true
                     Layout.preferredWidth: 420
                     Layout.maximumWidth: 800
                     Layout.preferredHeight: 32
                     placeholderText: "Search or enter address"
-                    // padding: 4
-                    text: currentWebView && currentWebView.url ? currentWebView.url : ""
-                    onActiveFocusChanged: {
-                        if (!activeFocus)
-                            cursorPosition = 0;
-
-                    }
                     color: "#fafafa"
                     font.pixelSize: 15
                     selectByMouse: true
+                    text: {
+                        if (!currentWebView || !currentWebView.url)
+                            return "";
+
+                        let urlStr = currentWebView.url.toString();
+                        return (urlStr === ntpUrl.toString()) ? "" : urlStr;
+                    }
                     onAccepted: {
                         let input = text.trim();
                         let targetUrl = "";
@@ -406,11 +418,43 @@ ApplicationWindow {
                             targetUrl = "https://google.com/search?q=" + input;
                         }
                         console.log("Navigating to: " + targetUrl);
-                        if (currentWebView) {
-                            currentWebView.url = targetUrl;
-                            currentWebView.forceActiveFocus();
-                            cursorPosition = 0;
+                        if (bar.currentIndex >= 0 && bar.currentIndex < tabsModel.count) {
+                            tabsModel.setProperty(bar.currentIndex, "address", targetUrl);
+                            if (currentWebView)
+                                currentWebView.forceActiveFocus();
+
                         }
+                        focus = false;
+                    }
+                    onActiveFocusChanged: {
+                        if (!activeFocus)
+                            updateBar();
+
+                    }
+
+                    Connections {
+                        function onCurrentWebViewChanged() {
+                            urlInput.updateBar();
+                        }
+
+                        target: window
+                    }
+
+                    Connections {
+                        function onUrlChanged() {
+                            if (!urlInput.activeFocus)
+                                urlInput.updateBar();
+
+                        }
+
+                        function onLoadingChanged() {
+                            if (!urlInput.activeFocus && !currentWebView.loading)
+                                urlInput.updateBar();
+
+                        }
+
+                        target: currentWebView
+                        ignoreUnknownSignals: true
                     }
 
                     background: Rectangle {
@@ -468,7 +512,6 @@ ApplicationWindow {
             Layout.fillWidth: true
             height: 1
             color: "#11d0d0d0"
-            anchors.top: urlBar.bottom
         }
 
     }
