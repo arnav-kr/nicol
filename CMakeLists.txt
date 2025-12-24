@@ -18,6 +18,7 @@ qt_add_qml_module(appnicol
     QML_FILES
         Main.qml
         ui/ToolbarButton.qml
+        ui/AppMenuItem.qml
     RESOURCES
         chrome/new-tab/index.html
         chrome/error/404.html

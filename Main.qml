@@ -17,7 +17,6 @@ ApplicationWindow {
             "icon": ""
         });
         bar.currentIndex = tabsModel.count - 1;
-        console.log("Added new tab with URL: " + url, " Current tab count: " + tabsModel.count, " Current index: " + bar.currentIndex, "WebView: ", currentWebView, "WebView URL: ", currentWebView ? currentWebView.url : "null", tabsModel.get(bar.currentIndex).address);
     }
 
     function closeTab(index) {
@@ -354,10 +353,88 @@ ApplicationWindow {
                 spacing: 0
 
                 ToolbarButton {
+                    id: backButton
+
                     Layout.leftMargin: 16
                     text: "<"
                     enabled: currentWebView && currentWebView.canGoBack ? currentWebView.canGoBack : false
                     onClicked: currentWebView.goBack()
+
+                    TapHandler {
+                        acceptedButtons: Qt.RightButton
+                        onTapped: {
+                            if (currentWebView && currentWebView.canGoBack)
+                                historyMenu.open();
+
+                        }
+                    }
+
+                    Menu {
+                        id: historyMenu
+
+                        opacity: 0.9
+                        x: -8
+                        y: urlBar.height - 8
+                        width: Math.max(500, window.width * 0.3)
+
+                        Instantiator {
+                            model: window.currentWebView?.history?.items
+                            onObjectAdded: function(index, object) {
+                                let count = window.currentWebView.history.count;
+                                historyMenu.insertItem(count - index - 1, object);
+                            }
+                            onObjectRemoved: function(index, object) {
+                                historyMenu.removeItem(object);
+                            }
+
+                            MenuItem {
+                                required property var model
+
+                                onTriggered: window.currentWebView.goBackOrForward(model.offset)
+                                enabled: model.offset
+                                checked: model.offset === 0
+
+                                background: Rectangle {
+                                    implicitHeight: parent.checked ? 32 : 28
+                                    anchors.fill: parent
+                                    anchors.bottomMargin: parent.checked ? 2 : 0
+                                    color: parent.checked ? "#3d3d3d" : (parent.highlighted ? "#2d2d2d" : "transparent")
+                                    border.color: "transparent"
+                                    radius: 3
+                                }
+
+                                contentItem: RowLayout {
+                                    spacing: 8
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 10
+                                    anchors.rightMargin: 6
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    Image {
+                                        source: model.icon || ""
+                                        Layout.preferredWidth: 16
+                                        Layout.preferredHeight: 16
+                                        sourceSize: Qt.size(16, 16)
+                                        fillMode: Image.PreserveAspectFit
+                                    }
+
+                                    Text {
+                                        text: model.title
+                                        color: "#dadada"
+                                        font.pixelSize: 14
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
                 }
 
                 ToolbarButton {
@@ -415,9 +492,9 @@ ApplicationWindow {
                         } else if (input.includes(".") && !input.includes(" ")) {
                             targetUrl = "https://" + input;
                         } else {
-                            targetUrl = "https://google.com/search?q=" + input;
+                            let searchEngine = "https://duckduckgo.com/?q=%s";
+                            targetUrl = searchEngine.replace("%s", encodeURIComponent(input));
                         }
-                        console.log("Navigating to: " + targetUrl);
                         if (bar.currentIndex >= 0 && bar.currentIndex < tabsModel.count) {
                             tabsModel.setProperty(bar.currentIndex, "address", targetUrl);
                             if (currentWebView)
@@ -473,27 +550,31 @@ ApplicationWindow {
                     Layout.rightMargin: 16
                     text: "☰"
                     onClicked: {
-                        menu.popup();
+                        appMenu.open();
                     }
 
                     Menu {
-                        id: menu
+                        id: appMenu
 
-                        MenuItem {
+                        opacity: 0.9
+                        x: -appMenu.width + 40
+                        y: urlBar.height - 8
+
+                        AppMenuItem {
                             text: "New Tab"
                             onTriggered: {
                                 addTab();
                             }
                         }
 
-                        MenuItem {
+                        AppMenuItem {
                             text: "Close Tab"
                             onTriggered: {
                                 closeTab(bar.currentIndex);
                             }
                         }
 
-                        MenuItem {
+                        AppMenuItem {
                             text: "Quit"
                             onTriggered: {
                                 Qt.quit();
