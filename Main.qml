@@ -28,7 +28,15 @@ ApplicationWindow {
                 bar.currentIndex--;
             tabsModel.remove(index);
         } else {
-            Qt.quit();
+            window.close();
+        }
+    }
+
+    function openNewTabWithRequest(request) {
+        addTab();
+        let newView = webViewRepeater.itemAt(tabsModel.count - 1);
+        if (newView) {
+            request.openIn(newView);
         }
     }
 
@@ -198,7 +206,7 @@ ApplicationWindow {
     Shortcut {
         sequences: [StandardKey.Quit]
         onActivated: {
-            Qt.quit();
+            window.close();
         }
     }
 
@@ -783,7 +791,7 @@ ApplicationWindow {
                         AppMenuItem {
                             text: "Quit"
                             onTriggered: {
-                                Qt.quit();
+                                window.close();
                             }
                         }
 
