@@ -81,7 +81,8 @@
         </svg>
       </div>
       <input class="ntp-searchbar" type="text" name="q" placeholder="Search or enter address" autocomplete="off"
-        autofocus>
+        autofocus onkeydown="if(event.key === 'Enter'){ this.form.submit(); }">
+      <input type="text" name="ia" value="web" hidden>
     </form>
 </main>
 </body>

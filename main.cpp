@@ -18,6 +18,7 @@
 #include <qlogging.h>
 #include <qstringview.h>
 #include <qurl.h>
+#include <qwebenginesettings.h>
 
 class NicolSchemeHandler : public QWebEngineUrlSchemeHandler {
 public:
@@ -122,6 +123,8 @@ int main(int argc, char *argv[]) {
   profile->settings()->setAttribute(QWebEngineSettings::WebGLEnabled, true);
   profile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
   profile->settings()->setAttribute(QWebEngineSettings::PdfViewerEnabled, true);
+  profile->settings()->setAttribute(
+      QWebEngineSettings::FullScreenSupportEnabled, true);
 
   QQmlApplicationEngine engine;
   QObject::connect(

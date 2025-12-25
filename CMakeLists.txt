@@ -19,6 +19,8 @@ qt_add_qml_module(appnicol
         Main.qml
         ui/ToolbarButton.qml
         ui/AppMenuItem.qml
+        ui/ZoomOverlay.qml
+        ui/FullScreenNotification.qml
     RESOURCES
         chrome/new-tab/index.html
         chrome/error/404.html

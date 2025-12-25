@@ -9,7 +9,7 @@ ApplicationWindow {
 
     property url ntpUrl: "nicol://new-tab/"
     property Item currentWebView: (webViewRepeater.count > bar.currentIndex && bar.currentIndex >= 0) ? webViewRepeater.itemAt(bar.currentIndex) : null
-
+    property int previousVisibility: Window.Windowed
     function addTab(url = ntpUrl.toString()) {
         tabsModel.append({
             "title": "New Tab",
@@ -20,6 +20,7 @@ ApplicationWindow {
     }
 
     function closeTab(index) {
+
         if (tabsModel.count > 1) {
             if (index === bar.currentIndex)
                 bar.currentIndex = Math.max(0, index - 1);
@@ -27,6 +28,176 @@ ApplicationWindow {
                 bar.currentIndex--;
             tabsModel.remove(index);
         } else {
+            Qt.quit();
+        }
+    }
+
+    Shortcut {
+        sequences: [StandardKey.AddTab]
+        onActivated: {
+            addTab();
+            urlInput.forceActiveFocus();
+            urlInput.selectAll();
+        }
+    }
+
+    Shortcut {
+        sequences: [StandardKey.Close]
+        onActivated: {
+            if(window.currentWebView) window.currentWebView.triggerWebAction(WebEngineView.RequestClose);
+        }
+    }
+
+    Shortcut {
+        sequences: ["Ctrl+L"]
+        onActivated: {
+            urlInput.forceActiveFocus();
+            urlInput.selectAll();
+        }
+    }
+
+    Shortcut {
+        sequences: [StandardKey.Refresh, "Ctrl+R"]
+        onActivated: {
+            if (currentWebView)
+                currentWebView.reload();
+        }
+    }
+
+    Shortcut {
+        sequences: [StandardKey.Back]
+        onActivated: {
+            if (currentWebView && currentWebView.canGoBack)
+                currentWebView.goBack();
+        }
+    }
+
+    Shortcut {
+        sequences: [StandardKey.Forward]
+        onActivated: {
+            if (currentWebView && currentWebView.canGoForward)
+                currentWebView.goForward();
+        }
+    }
+
+    Shortcut {
+        sequences: ["F11"]
+        onActivated: {
+            if( window.currentWebView ) {
+                if (window.visibility !== Window.FullScreen) {
+                    window.previousVisibility = window.visibility; 
+                    window.visibility = Window.FullScreen;
+                    fullScreenNotification.show();
+                } else {
+                    if (window.currentWebView && window.currentWebView.isFullScreen) {
+                        window.currentWebView.triggerWebAction(WebEngineView.ExitFullScreen);
+                    }
+                    window.visibility = window.previousVisibility;
+                }
+            }
+        }
+    }
+
+    Shortcut {
+        sequences: ["Esc"]
+        context: Qt.ApplicationShortcut 
+        onActivated: {
+            if (window.visibility === Window.FullScreen) {
+                if (window.currentWebView && window.currentWebView.isFullScreen) {
+                    window.currentWebView.triggerWebAction(WebEngineView.ExitFullScreen);
+                }
+                window.visibility = window.previousVisibility;
+                return;
+            }
+            if (window.currentWebView && window.currentWebView.loading) {
+                window.currentWebView.stop();
+            }
+        }
+    }
+
+    Shortcut {
+        sequences: ["Ctrl+0"]
+        onActivated: {
+            if( window.currentWebView ) {
+            window.currentWebView.zoomFactor = 1.0;
+            zoomOverlay.show();
+            }
+        }
+    }
+
+    Shortcut {
+        sequences: [StandardKey.ZoomOut]
+        onActivated: {
+            if (window.currentWebView) {
+                window.currentWebView.zoomFactor -= 0.1;
+                zoomOverlay.show();
+            }
+        }
+    }
+
+    Shortcut {
+        sequences: [StandardKey.ZoomIn]
+        onActivated: {
+            if (window.currentWebView) {
+                window.currentWebView.zoomFactor += 0.1;
+                zoomOverlay.show();
+            }
+        }
+    }
+
+    Shortcut {
+        sequences: [StandardKey.Copy]
+        onActivated: {
+            if(window.currentIndex)
+                window.currentWebView.triggerWebAction(WebEngineView.Copy);
+        }
+    }
+    Shortcut {
+        sequences: [StandardKey.Cut]
+        onActivated: {
+            if(window.currentIndex)
+                window.currentWebView.triggerWebAction(WebEngineView.Cut);
+        }
+    }
+    Shortcut {
+        sequences: [StandardKey.Paste]
+        onActivated: {
+            if(window.currentIndex)
+                window.currentWebView.triggerWebAction(WebEngineView.Paste);
+        }
+    }
+    Shortcut {
+        sequences: ["Shift+"+StandardKey.Paste]
+        onActivated: {
+            if(window.currentIndex)
+                window.currentWebView.triggerWebAction(WebEngineView.PasteAndMatchStyle);
+        }
+    }
+    Shortcut {
+        sequences: [StandardKey.SelectAll]
+        onActivated: {
+            if(window.currentWebView)
+                window.currentWebView.triggerWebAction(WebEngineView.SelectAll);
+        }
+    }
+    Shortcut {
+        sequences: [StandardKey.Undo]
+        onActivated: {
+            if (window.currentWebView)
+                window.currentWebView.triggerWebAction(WebEngineView.Undo);
+        }
+    }
+    Shortcut {
+        sequences: [StandardKey.Redo]
+        onActivated: {
+            if (window.currentWebView)
+                window.currentWebView.triggerWebAction(WebEngineView.Redo);
+        }
+    }
+
+    Shortcut {
+        sequences: [StandardKey.Quit]
+        onActivated: {
             Qt.quit();
         }
     }
@@ -78,7 +249,32 @@ ApplicationWindow {
                     const newTabWebView = webViewRepeater.itemAt(tabsModel.count - 1);
                     if (newTabWebView)
                         request.openIn(newTabWebView);
-
+                }
+                onSelectClientCertificate: function(selection) {
+                    selection.certificates[0].select();
+                }
+                onCertificateError: function(error) {
+                    if (!error.isMainFrame) {
+                        error.rejectCertificate();
+                        return;
+                    }
+                    error.defer();
+                    sslDialog.enqueue(error);
+                }
+                onDesktopMediaRequested: function(request) {
+                    request.selectScreen(request.screensModel.index(0, 0));
+                }
+                onWindowCloseRequested: closeTab(bar.currentIndex);
+                onFullScreenRequested: function(request) {
+                    if (request.toggleOn) {
+                        window.previousVisibility = window.visibility
+                        window.visibility = Window.FullScreen
+                        fullScreenNotification.show()
+                        request.accept()
+                    } else {
+                        window.visibility = window.previousVisibility
+                        request.accept()
+                    }
                 }
             }
 
@@ -86,7 +282,17 @@ ApplicationWindow {
 
     }
 
+    ZoomOverlay {
+        id: zoomOverlay
+        zoom: currentWebView ? currentWebView.zoomFactor : 1.0
+    }
+    FullScreenNotification {
+        id: fullScreenNotification
+    }
+
     header: ColumnLayout {
+        id: browserUI
+        visible: window.visibility !== Window.FullScreen
         spacing: 0
 
         Item {
@@ -492,7 +698,7 @@ ApplicationWindow {
                         } else if (input.includes(".") && !input.includes(" ")) {
                             targetUrl = "https://" + input;
                         } else {
-                            let searchEngine = "https://duckduckgo.com/?q=%s";
+                            let searchEngine = "https://duckduckgo.com/?q=%s&ia=web";
                             targetUrl = searchEngine.replace("%s", encodeURIComponent(input));
                         }
                         if (bar.currentIndex >= 0 && bar.currentIndex < tabsModel.count) {
