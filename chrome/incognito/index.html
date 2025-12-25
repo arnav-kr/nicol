@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incognito Tab</title>
+  <link rel="shortcut icon" href="../assets/logo_dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+  <link rel="shortcut icon" href="../assets/logo_light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="../assets/styles/globals.css">
+  <style>
+    .ntp-header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 48px;
+      gap: 16px;
+    }
+
+    .ntp-vertical-divider {
+      width: 1px;
+      height: 56px;
+      background-color: var(--ntp-text-color);
+      opacity: 0.3;
+      border-radius: 4px;
+    }
+
+    .ntp-logo {
+      height: 64px;
+    }
+
+    .ntp-incognito-icon {
+      width: auto;
+      height: 56px;
+    }
+
+    .ntp-incognito-icon path {
+      fill: #000000;
+    }
+
+    .ntp-logo-dark {
+      display: none;
+    }
+
+    .ntp-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 30dvh;
+    }
+
+    .ntp-search-form {
+      width: 100%;
+      max-width: 600px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      color: var(--ntp-text-color);
+      border: 1px solid var(--ntp-secondary-background-color);
+      background-color: var(--ntp-secondary-background-color);
+      border-radius: 100px;
+      gap: 12px;
+    }
+
+    .ntp-searchbar {
+      border: none;
+      appearance: none;
+      background: transparent;
+      width: 100%;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .ntp-search-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--ntp-icon-color);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .ntp-incognito-icon path {
+        fill: #ffffff;
+      }
+    }
+  </style>
+</head>
+
+<main class="ntp-main">
+
+  <body>
+    <header class="ntp-header">
+      <img src="../assets/logo_horizontal_light.svg" alt="Nicol Logo" class="ntp-logo ntp-logo-light">
+      <img src="../assets/logo_horizontal_dark.svg" alt="Nicol Logo" class="ntp-logo ntp-logo-dark">
+      <div class="ntp-vertical-divider"></div>
+      <svg viewBox="0 0 64 64" fill="none" class="ntp-incognito-icon" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M43.7705 4.12401C43.0391 2.47201 41.1502 1.60063 39.3957 2.17883C39.3957 2.17883 35.0468 4.64065 32 4.64503C28.94 4.64943 24.5687 2.17883 24.5687 2.17883L24.3931 2.12618C22.6304 1.64238 20.7781 2.58911 20.1243 4.29284L12.0174 25.6H51.9826L43.84 4.29284L43.7705 4.12401Z" />
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M48 36.3444C42.0974 36.3444 37.1913 40.4308 35.9113 45.8896C32.9243 44.6216 30.1513 44.9738 28.0887 45.8543C26.773 40.3954 21.867 36.3444 16 36.3444C9.13737 36.3444 3.55566 41.874 3.55566 48.6726C3.55566 55.4703 9.13737 61 16 61C22.5426 61 27.84 55.9986 28.3374 49.6584C29.4043 48.9186 32.2139 47.5453 35.6626 49.7292C36.2313 56.034 41.493 61 48 61C54.8626 61 60.4443 55.4703 60.4443 48.6726C60.4443 41.874 54.8626 36.3444 48 36.3444ZM24.8887 48.6726C24.8887 43.8119 20.907 39.8662 16 39.8662C11.093 39.8662 7.11131 43.8119 7.11131 48.6726C7.11131 53.5333 11.093 57.4772 16 57.4772C20.907 57.4772 24.8887 53.5333 24.8887 48.6726ZM56.8887 48.6726C56.8887 43.8119 52.907 39.8662 48 39.8662C43.093 39.8662 39.1113 43.8119 39.1113 48.6726C39.1113 53.5333 43.093 57.4772 48 57.4772C52.907 57.4772 56.8887 53.5333 56.8887 48.6726Z" />
+        <path d="M64 29.2308H0V32.8615H64V29.2308Z" fill="white" />
+      </svg>
+
+    </header>
+
+    <form action="https://duckduckgo.com" method="get" class="ntp-search-form"
+      onclick="this.querySelector('input').focus();">
+      <div class="ntp-search-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+      </div>
+      <input class="ntp-searchbar" type="text" name="q" placeholder="Search or enter address" autocomplete="off"
+        autofocus onkeydown="if(event.key === 'Enter'){ this.form.submit(); }">
+      <input type="text" name="ia" value="web" hidden>
+    </form>
+</main>
+</body>
+
+</html>

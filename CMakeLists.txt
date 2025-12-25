@@ -16,20 +16,22 @@ qt_add_qml_module(appnicol
     URI nicol
     VERSION 1.0
     QML_FILES
-        Main.qml
-        ui/ToolbarButton.qml
-        ui/AppMenuItem.qml
-        ui/ZoomOverlay.qml
-        ui/FullScreenNotification.qml
+    Main.qml
+    ui/BrowserWindow.qml
+    ui/ToolbarButton.qml
+    ui/AppMenuItem.qml
+    ui/ZoomOverlay.qml
+    ui/FullScreenNotification.qml
     RESOURCES
-        chrome/new-tab/index.html
-        chrome/error/404.html
-        chrome/error/offline.html
-        chrome/assets/styles/globals.css
-        chrome/assets/logo_horizontal_dark.svg
-        chrome/assets/logo_light.svg
-        chrome/assets/logo_dark.svg
-        chrome/assets/logo_horizontal_light.svg
+    chrome/new-tab/index.html
+    chrome/incognito/index.html
+    chrome/error/404.html
+    chrome/error/offline.html
+    chrome/assets/styles/globals.css
+    chrome/assets/logo_horizontal_dark.svg
+    chrome/assets/logo_light.svg
+    chrome/assets/logo_dark.svg
+    chrome/assets/logo_horizontal_light.svg
 )
 
 set_target_properties(appnicol PROPERTIES
