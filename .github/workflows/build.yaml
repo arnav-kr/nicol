@@ -1,0 +1,51 @@
+name: Build
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-20.04
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.8.0'
+          cache: 'true'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-randr0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xinput0 libzstd-dev
+
+      - name: Build and Package AppImage
+        run: |
+          mkdir build && cd build
+          
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+          
+          cmake --build . -j$(nproc)
+          
+          DESTDIR=../AppDir cmake --install .
+          cd ..
+          
+          cp chrome/assets/logo_dark.svg AppDir/dev.arnv.nicol.svg
+          
+          wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+          chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+          
+          ./linuxdeployqt-continuous-x86_64.AppImage \
+             AppDir/usr/share/applications/dev.arnv.nicol.desktop \
+             -appimage -unsupported-allow-new-glibc -extra-plugins=iconengines,platformthemes
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nicol-Linux-AppImage
+          path: Nicol*.AppImage
