@@ -17,17 +17,20 @@ jobs:
         uses: jurplel/install-qt-action@v3
         with:
           version: "6.8.0"
-          modules: "qtwebengine qtwebchannel qtpositioning qtserialport"
+          modules: "qtwayland qtwebengine qtwebchannel qtpositioning qtserialport"
           cache: "true"
 
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-randr0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xinput0 libzstd-dev libvulkan-dev libxcb-cursor0
-      - name: Install WebEngine dependencies
+      - name: WebEngine dependencies and setup
         run: |
           sudo apt-get update
           sudo apt-get install -y libnss3 libdbus-1-3 libxcomposite1 libxrender1 libxrandr2 libxtst6 libxi6 libasound2 libegl1-mesa-dev libgl1-mesa-dev libxkbcommon-x11-0 fontconfig libxcursor1 libxdamage1 libxss1 libpci3
+          mkdir -p build/AppDir/usr/qml
+          cp -r ${{ env.Qt6_DIR }}/../../qml/QtWebEngine build/AppDir/usr/qml/
+          cp -r ${{ env.Qt6_DIR }}/../../qml/QtPositioning build/AppDir/usr/qml/
       - name: Build and Package AppImage
         run: |
           mkdir build && cd build
