@@ -17,9 +17,9 @@ jobs:
         with:
           version: "6.8.0"
           target: "desktop"
-          modules: "qtwebengine qtwebchannel qtpositioning"
+          modules: "qtwebengine qtwebchannel qtpositioning qtserialport"
           cache: true
-          tools: 'tools_cmake'
+          tools: "tools_cmake"
 
       - name: Install Dependencies
         run: |
@@ -117,11 +117,11 @@ jobs:
           # Verify QML modules were bundled
           echo "=== Checking bundled QML after linuxdeploy ==="
           ls -la ./AppDir/usr/qml/QtWebEngine/ 2>/dev/null || echo "WARNING: QtWebEngine QML still missing!"
-          
+
           # Check the plugins dir
           echo "=== Checking platform plugins ==="
           ls -la ./AppDir/usr/plugins/platforms/ 2>/dev/null || echo "No platform plugins"
-          
+
           # Check if AppRun was created properly
           echo "=== AppRun content ==="
           cat ./AppDir/AppRun 2>/dev/null || echo "No AppRun script found"
@@ -144,7 +144,7 @@ jobs:
         with:
           version: "6.8.0"
           arch: "win64_msvc2022_64"
-          modules: "qtwebengine qtwebchannel qtpositioning"
+          modules: "qtwebengine qtwebchannel qtpositioning qtserialport"
 
       - uses: ilammy/msvc-dev-cmd@v1
 
@@ -185,7 +185,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.0"
-          modules: "qtwebengine qtwebchannel qtpositioning"
+          modules: "qtwebengine qtwebchannel qtpositioning qtserialport"
 
       - name: Build
         run: |
