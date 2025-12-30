@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Nicol Browser
+Comment=A minimal web browser
+Exec=appnicol
+Icon=dev.arnv.nicol
+Categories=Network;WebBrowser;Qt;
+Terminal=false

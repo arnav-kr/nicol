@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(nicol VERSION 0.1 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS Quick WebEngineQuick)
@@ -38,7 +40,9 @@ set_target_properties(appnicol PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_GUI_IDENTIFIER "dev.arnv.nicol"
     WIN32_EXECUTABLE TRUE
+    MACOSX_BUNDLE_ICON_FILE "logo.icns"
 )
 
 target_link_libraries(appnicol
@@ -52,3 +56,51 @@ install(TARGETS appnicol
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+install(FILES config.ini DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# linux
+if(UNIX AND NOT APPLE)
+    install(FILES dev.arnv.nicol.desktop
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+
+    install(FILES "assets/icons/logo.png"
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/1024x1024/apps
+        RENAME "dev.arnv.nicol.png")
+
+    install(FILES "assets/icons/logo.png"
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons
+        RENAME "dev.arnv.nicol.png")
+endif()
+
+# windows and mac
+if(WIN32 OR APPLE)
+    qt_generate_deploy_qml_app_script(
+        TARGET appnicol
+        OUTPUT_SCRIPT deploy_script
+    )
+    install(SCRIPT ${deploy_script})
+endif()
+
+# cpack
+set(CPACK_PACKAGE_NAME "NicolBrowser")
+set(CPACK_PACKAGE_VENDOR "Arnav")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A minimal web browser")
+
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_DISPLAY_NAME "Nicol Browser")
+    set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/assets/icons/logo.ico")
+    set(CPACK_NSIS_INSTALLED_ICON_NAME "${CMAKE_SOURCE_DIR}/assets/icons/logo.ico")
+endif()
+
+if(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+    set(CPACK_DMG_VOLUME_NAME "Nicol")
+    set(ICON_SOURCE "assets/icons/logo.icns")
+    set_source_files_properties(${ICON_SOURCE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    target_sources(appnicol PRIVATE ${ICON_SOURCE})
+endif()
+
+include(CPack)
