@@ -8,10 +8,10 @@
 
 A minimal web browser based on Qt.
 
-![Build Status](https://github.com/arnav-kr/nicol/actions/workflows/build.yaml/badge.svg)
+<!-- ![Build Status](https://github.com/arnav-kr/nicol/actions/workflows/build.yaml/badge.svg) -->
 
-| [Download Nicol Browser](https://github.com/arnav-kr/nicol/releases/latest) |
-|---|
+| <!-- | [Download Nicol Browser](https://github.com/arnav-kr/nicol/releases/latest) |
+| ---- | --------------------------------------------------------------------------- |>
 
 
 ## Features
@@ -28,9 +28,22 @@ A minimal web browser based on Qt.
 * CMake 3.16 or later
 * C++17 compatible compiler
 
-### Linux
+### Arch Linux
 ```bash
-sudo apt install build-essential cmake qt6-webengine-dev qt6-declarative-dev
+sudo pacman -S base-devel cmake qt6-webengine qt6-declarative
+```
+
+### Debian/Ubuntu
+> **Note:** Ubuntu's official repositories only provide Qt 6.4, which is below the required 6.8. You'll need to install Qt 6.8 manually using the [Qt Online Installer](https://www.qt.io/download-qt-installer) or [aqtinstall](https://github.com/miurahr/aqtinstall).
+
+```bash
+sudo apt install build-essential cmake
+# Then install Qt 6.8+ via Qt Online Installer or aqtinstall
+```
+
+### Fedora
+```bash
+sudo dnf install cmake qt6-qtwebengine-devel qt6-qtdeclarative-devel
 ```
 
 ### macOS
