@@ -223,7 +223,7 @@ ApplicationWindow {
     Shortcut {
         sequences: [StandardKey.Copy]
         onActivated: {
-            if (window.currentIndex)
+            if (window.currentWebView)
                 window.currentWebView.triggerWebAction(WebEngineView.Copy);
 
         }
@@ -232,7 +232,7 @@ ApplicationWindow {
     Shortcut {
         sequences: [StandardKey.Cut]
         onActivated: {
-            if (window.currentIndex)
+            if (window.currentWebView)
                 window.currentWebView.triggerWebAction(WebEngineView.Cut);
 
         }
@@ -241,7 +241,7 @@ ApplicationWindow {
     Shortcut {
         sequences: [StandardKey.Paste]
         onActivated: {
-            if (window.currentIndex)
+            if (window.currentWebView)
                 window.currentWebView.triggerWebAction(WebEngineView.Paste);
 
         }
@@ -250,7 +250,7 @@ ApplicationWindow {
     Shortcut {
         sequences: ["Shift+" + StandardKey.Paste]
         onActivated: {
-            if (window.currentIndex)
+            if (window.currentWebView)
                 window.currentWebView.triggerWebAction(WebEngineView.PasteAndMatchStyle);
 
         }
@@ -339,12 +339,8 @@ ApplicationWindow {
                     selection.certificates[0].select();
                 }
                 onCertificateError: function(error) {
-                    if (!error.isMainFrame) {
-                        error.rejectCertificate();
-                        return ;
-                    }
-                    error.defer();
-                    sslDialog.enqueue(error);
+                    error.rejectCertificate();
+                    console.warn("Certificate error rejected:", error.description);
                 }
                 onDesktopMediaRequested: function(request) {
                     request.selectScreen(request.screensModel.index(0, 0));
