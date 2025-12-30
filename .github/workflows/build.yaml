@@ -1,34 +1,50 @@
 name: Build
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-22.04
-    container: stateoftheartio/qt6:6.8-gcc-aqt
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Build & Package
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: "6.8.0"
+          modules: "qtwebengine qtwebchannel qtpositioning qtserialport"
+          archives: "qtbase qtdeclarative qttools"
+          host: "linux"
+          cache: "true"
+
+      - name: Install Dependencies
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-          cmake --build build -j$(nproc)
-          DESTDIR=AppDir cmake --install build
-
-          mkdir -p AppDir/usr/share/icons/hicolor/1024x1024/apps/
-          cp assets/icons/logo.png AppDir/dev.arnv.nicol.png
-          cp assets/icons/logo.png AppDir/usr/share/icons/hicolor/1024x1024/apps/dev.arnv.nicol.png
-          
-          mkdir -p AppDir/usr/qml
-          cp -r /opt/qt6/qml/QtWebEngine AppDir/usr/qml/
-          
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-randr0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xinput0 libzstd-dev libvulkan-dev libxcb-cursor0
+      - name: Install WebEngine dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libdbus-1-3 libxcomposite1 libxrender1 libxrandr2 libxtst6 libxi6 libasound2 libegl1-mesa-dev libgl1-mesa-dev libxkbcommon-x11-0 fontconfig libxcursor1 libxdamage1 libxss1 libpci3
+      - name: Build and Package AppImage
+        run: |
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+          cmake --build . -j$(nproc)
+          DESTDIR=./AppDir cmake --install .
+          cp ../assets/icons/logo.png ./AppDir/dev.arnv.nicol.png
           wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage" -O linuxdeployqt
           chmod +x linuxdeployqt
-          
-          ./linuxdeployqt AppDir/usr/share/applications/*.desktop -appimage -extra-plugins=platformthemes/libqgtk3.so
-
-      - name: Upload
+          ./linuxdeployqt AppDir/usr/share/applications/dev.arnv.nicol.desktop  -extra-plugins=iconengines,platformthemes
+          wget -c -nv "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool
+          chmod +x appimagetool
+          ./appimagetool AppDir
+      - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Nicol-Browser-AppImage
-          path: Nicol*.AppImage
+          name: Nicol-Browser-Linux.AppImage
+          path: build/Nicol*.AppImage
