@@ -1,11 +1,17 @@
-<img src="chrome/assets/logo_dark.svg" media="(prefers-color-scheme: dark)" alt="Nicol Browser Logo" width="256" height="256"/>
-<img src="chrome/assets/logo_light.svg" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)" alt="Nicol Browser Logo" width="256" height="256"/>
+<picture>
+	<source srcset="chrome/assets/logo_dark.svg" media="(prefers-color-scheme: dark)">
+	<source srcset="chrome/assets/logo_light.svg" media="(prefers-color-scheme: light)">
+	<img src="chrome/assets/logo_light.svg" alt="Nicol Browser Logo" width="256" height="256" />
+</picture>
 
 # Nicol Browser
 
 A minimal web browser based on Qt.
 
 ![Build Status](https://github.com/arnav-kr/nicol/actions/workflows/build.yaml/badge.svg)
+
+| [Download Nicol Browser](https://github.com/arnav-kr/nicol/releases/latest) |
+|---|
 
 
 ## Features
