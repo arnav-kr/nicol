@@ -33,6 +33,7 @@ jobs:
       - name: Build and Package AppImage
         run: |
           mkdir build && cd build
+          export LD_LIBRARY_PATH=$QT_ROOT_DIR/lib:$LD_LIBRARY_PATH
           cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
           cmake --build . -j$(nproc)
           DESTDIR=./AppDir cmake --install .
