@@ -91,8 +91,21 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A minimal web browser")
 if(WIN32)
     set(CPACK_GENERATOR "NSIS")
     set(CPACK_NSIS_DISPLAY_NAME "Nicol Browser")
+    set(CPACK_NSIS_PACKAGE_NAME "Nicol Browser")
     set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/assets/icons/logo.ico")
-    set(CPACK_NSIS_INSTALLED_ICON_NAME "${CMAKE_SOURCE_DIR}/assets/icons/logo.ico")
+    set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/assets/icons/logo.ico")
+    set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\appnicol.exe")
+    set(CPACK_NSIS_EXECUTABLES_DIRECTORY "bin")
+    set(CPACK_NSIS_CREATE_ICONS_EXTRA
+        "CreateShortCut '$SMPROGRAMS\\$STARTMENU_FOLDER\\Nicol Browser.lnk' '$INSTDIR\\bin\\appnicol.exe'")
+    set(CPACK_NSIS_DELETE_ICONS_EXTRA
+        "Delete '$SMPROGRAMS\\$START_MENU\\Nicol Browser.lnk'")
+    set(CPACK_NSIS_MODIFY_PATH OFF)
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+
+    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_BINARY_DIR}/appnicol_icon.rc")
+    file(WRITE "${APP_ICON_RESOURCE_WINDOWS}" "IDI_ICON1 ICON DISCARDABLE \"${CMAKE_SOURCE_DIR}/assets/icons/logo.ico\"\n")
+    target_sources(appnicol PRIVATE "${APP_ICON_RESOURCE_WINDOWS}")
 endif()
 
 if(APPLE)
