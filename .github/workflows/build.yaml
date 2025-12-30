@@ -113,8 +113,9 @@ jobs:
           export QTWEBENGINE_RESOURCES_PATH="${HERE}/usr/resources"
           export QTWEBENGINE_LOCALES_PATH="${HERE}/usr/translations/qtwebengine_locales"
           export QT_QPA_PLATFORM_PLUGIN_PATH="${HERE}/usr/plugins/platforms"
+          # Auto-detect platform: prefer wayland if available, fall back to xcb
           if [ -z "$QT_QPA_PLATFORM" ]; then
-            if [ -n "$WAYLAND_DISPLAY" ] && [ -f "${HERE}/usr/plugins/platforms/libqwayland-generic.so" ]; then
+            if [ -n "$WAYLAND_DISPLAY" ] && [ -f "${HERE}/usr/plugins/platforms/libqwayland.so" ]; then
               export QT_QPA_PLATFORM=wayland
             else
               export QT_QPA_PLATFORM=xcb
@@ -136,12 +137,43 @@ jobs:
           export DEPLOY_PLATFORM_PLUGINS="1"
           export NO_STRIP=1
 
-          # Run linuxdeploy to bundle libs (it will use our custom AppRun)
-          ./linuxdeploy --appdir AppDir --plugin qt --custom-apprun=./custom-apprun.sh --output appimage
+          # Run linuxdeploy to bundle libs WITHOUT creating AppImage yet
+          ./linuxdeploy --appdir AppDir --plugin qt --custom-apprun=./custom-apprun.sh
+
+          # linuxdeploy may have cleared our pre-copied QML, so copy QtWebEngine QML AFTER linuxdeploy
+          echo "=== Re-copying QtWebEngine QML modules after linuxdeploy ==="
+          if [ -d "${QT_BASE}/qml/QtWebEngine" ]; then
+            cp -r "${QT_BASE}/qml/QtWebEngine" ./AppDir/usr/qml/
+          fi
+          if [ -d "${QT_BASE}/qml/QtWebChannel" ]; then
+            cp -r "${QT_BASE}/qml/QtWebChannel" ./AppDir/usr/qml/
+          fi
+
+          # Copy QtWebEngine libraries that the QML plugin needs
+          echo "=== Copying QtWebEngine libraries ==="
+          cp -n "${QT_BASE}/lib/libQt6WebEngine"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
+          cp -n "${QT_BASE}/lib/libQt6WebChannel"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
+          cp -n "${QT_BASE}/lib/libQt6WebEngineCore"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
+          cp -n "${QT_BASE}/lib/libQt6WebEngineQuick"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
+
+          # Explicitly copy wayland plugins (EXTRA_QT_PLUGINS may not work reliably)
+          echo "=== Copying Wayland plugins ==="
+          mkdir -p ./AppDir/usr/plugins/wayland-shell-integration
+          mkdir -p ./AppDir/usr/plugins/wayland-graphics-integration-client
+          mkdir -p ./AppDir/usr/plugins/wayland-decoration-client
+          cp -r "${QT_BASE}/plugins/wayland-shell-integration/"* ./AppDir/usr/plugins/wayland-shell-integration/ 2>/dev/null || true
+          cp -r "${QT_BASE}/plugins/wayland-graphics-integration-client/"* ./AppDir/usr/plugins/wayland-graphics-integration-client/ 2>/dev/null || true
+          cp -r "${QT_BASE}/plugins/wayland-decoration-client/"* ./AppDir/usr/plugins/wayland-decoration-client/ 2>/dev/null || true
+          # Copy wayland platform plugin
+          cp "${QT_BASE}/plugins/platforms/libqwayland"*.so ./AppDir/usr/plugins/platforms/ 2>/dev/null || true
+          # Copy wayland libs
+          cp -n "${QT_BASE}/lib/libQt6Wayland"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
+          cp -n "${QT_BASE}/lib/libQt6WaylandClient"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
 
           # Verify QML modules were bundled
-          echo "=== Checking bundled QML after linuxdeploy ==="
+          echo "=== Checking bundled QML after re-copy ==="
           ls -la ./AppDir/usr/qml/QtWebEngine/ 2>/dev/null || echo "WARNING: QtWebEngine QML still missing!"
+          find ./AppDir/usr/qml -name "*.qmltypes" -o -name "qmldir" | head -20
 
           # Check the plugins dir
           echo "=== Checking platform plugins ==="
@@ -150,6 +182,9 @@ jobs:
           # Debug: Show final AppRun
           echo "=== Final AppRun content ==="
           cat ./AppDir/AppRun
+
+          # NOW create the AppImage with everything in place
+          ./linuxdeploy --appdir AppDir --output appimage
 
           mv *.AppImage Nicol-Browser-Linux.AppImage
 
