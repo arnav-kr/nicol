@@ -36,7 +36,8 @@ jobs:
           mkdir -p AppDir/usr/qml
           cp -r ${{ env.Qt6_DIR }}/qml/QtWebEngine AppDir/usr/qml/
           cp -r ${{ env.Qt6_DIR }}/qml/QtPositioning AppDir/usr/qml/
-
+          
+          export LD_LIBRARY_PATH=${{ env.Qt6_DIR }}/../..:$LD_LIBRARY_PATH
           cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
           cmake --build . -j$(nproc)
           DESTDIR=./AppDir cmake --install .
