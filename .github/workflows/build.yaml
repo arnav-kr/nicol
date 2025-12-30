@@ -63,11 +63,6 @@ jobs:
           QT_BASE="${QT_ROOT_DIR}"
           echo "Using QT_BASE: ${QT_BASE}"
 
-          # Debug: List directory structure
-          echo "=== Qt directory structure ==="
-          ls -la "${QT_BASE}/"
-          ls -la "${QT_BASE}/qml/" 2>/dev/null || echo "No qml/ directory"
-
           # Copy ALL QML modules from Qt installation
           mkdir -p ./AppDir/usr/qml
           if [ -d "${QT_BASE}/qml" ]; then
@@ -103,6 +98,33 @@ jobs:
           echo "=== Copied resources ==="
           ls -la ./AppDir/usr/resources/ || true
 
+          # Create custom AppRun wrapper script (linuxdeploy-plugin-qt skips this for Qt6)
+          cat > ./AppDir/AppRun << 'EOF'
+          #!/bin/bash
+          SELF=$(readlink -f "$0")
+          HERE=${SELF%/*}
+          export PATH="${HERE}/usr/bin:${PATH}"
+          export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
+          export QT_PLUGIN_PATH="${HERE}/usr/plugins"
+          export QML2_IMPORT_PATH="${HERE}/usr/qml"
+          export QML_IMPORT_PATH="${HERE}/usr/qml"
+          export QTWEBENGINEPROCESS_PATH="${HERE}/usr/libexec/QtWebEngineProcess"
+          export QTWEBENGINE_RESOURCES_PATH="${HERE}/usr/resources"
+          export QTWEBENGINE_LOCALES_PATH="${HERE}/usr/translations/qtwebengine_locales"
+          export QT_QPA_PLATFORM_PLUGIN_PATH="${HERE}/usr/plugins/platforms"
+          if [ -z "$QT_QPA_PLATFORM" ]; then
+            if [ -n "$WAYLAND_DISPLAY" ] && [ -f "${HERE}/usr/plugins/platforms/libqwayland-generic.so" ]; then
+              export QT_QPA_PLATFORM=wayland
+            else
+              export QT_QPA_PLATFORM=xcb
+            fi
+          fi
+          exec "${HERE}/usr/bin/appnicol" "$@"
+          EOF
+          # Remove leading whitespace from the heredoc
+          sed -i 's/^          //' ./AppDir/AppRun
+          chmod +x ./AppDir/AppRun
+
           # linuxdeploy-plugin-qt environment variables
           export QML_SOURCES_PATHS="${{ github.workspace }}"
           export EXTRA_QT_PLUGINS="wayland-shell-integration;wayland-graphics-integration-client;wayland-decoration-client;platforms"
@@ -111,8 +133,8 @@ jobs:
           export DEPLOY_PLATFORM_PLUGINS="1"
           export NO_STRIP=1
 
-          # Run linuxdeploy first to bundle libs and create AppRun
-          ./linuxdeploy --appdir AppDir --plugin qt --output appimage
+          # Run linuxdeploy to bundle libs (it will use our custom AppRun)
+          ./linuxdeploy --appdir AppDir --plugin qt --custom-apprun=./AppDir/AppRun --output appimage
 
           # Verify QML modules were bundled
           echo "=== Checking bundled QML after linuxdeploy ==="
@@ -121,10 +143,10 @@ jobs:
           # Check the plugins dir
           echo "=== Checking platform plugins ==="
           ls -la ./AppDir/usr/plugins/platforms/ 2>/dev/null || echo "No platform plugins"
-
-          # Check if AppRun was created properly
-          echo "=== AppRun content ==="
-          cat ./AppDir/AppRun 2>/dev/null || echo "No AppRun script found"
+          
+          # Debug: Show final AppRun
+          echo "=== Final AppRun content ==="
+          cat ./AppDir/AppRun
 
           mv *.AppImage Nicol-Browser-Linux.AppImage
 
