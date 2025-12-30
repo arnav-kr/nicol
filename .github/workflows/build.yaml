@@ -7,8 +7,8 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-20.04
-    
+    runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,8 +16,8 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.8.0'
-          cache: 'true'
+          version: "6.8.0"
+          cache: "true"
 
       - name: Install Dependencies
         run: |
@@ -27,11 +27,11 @@ jobs:
       - name: Build and Package AppImage
         run: |
           mkdir build && cd build
-          
+
           cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
           cmake --build . -j$(nproc)
           DESTDIR=./AppDir cmake --install .
-          
+
           cp ../assets/icons/logo.png ./AppDir/dev.arnv.nicol.png
 
           wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage" -O linuxdeployqt
