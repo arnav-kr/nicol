@@ -51,5 +51,5 @@ jobs:
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Nicol-Linux-AppImage
-          path: Nicol*.AppImage
+          name: Nicol-Browser-Linux.AppImage
+          path: build/Nicol*.AppImage
