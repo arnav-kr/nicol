@@ -99,7 +99,8 @@ jobs:
           ls -la ./AppDir/usr/resources/ || true
 
           # Create custom AppRun wrapper script (linuxdeploy-plugin-qt skips this for Qt6)
-          cat > ./AppDir/AppRun << 'EOF'
+          # Write to current directory first to avoid path issues
+          cat > ./custom-apprun.sh << 'APPRUNEOF'
           #!/bin/bash
           SELF=$(readlink -f "$0")
           HERE=${SELF%/*}
@@ -120,10 +121,12 @@ jobs:
             fi
           fi
           exec "${HERE}/usr/bin/appnicol" "$@"
-          EOF
-          # Remove leading whitespace from the heredoc
-          sed -i 's/^          //' ./AppDir/AppRun
-          chmod +x ./AppDir/AppRun
+          APPRUNEOF
+          # Remove leading whitespace from heredoc and make executable
+          sed -i 's/^          //' ./custom-apprun.sh
+          chmod +x ./custom-apprun.sh
+          echo "=== Custom AppRun script ==="
+          cat ./custom-apprun.sh
 
           # linuxdeploy-plugin-qt environment variables
           export QML_SOURCES_PATHS="${{ github.workspace }}"
@@ -134,7 +137,7 @@ jobs:
           export NO_STRIP=1
 
           # Run linuxdeploy to bundle libs (it will use our custom AppRun)
-          ./linuxdeploy --appdir AppDir --plugin qt --custom-apprun=./AppDir/AppRun --output appimage
+          ./linuxdeploy --appdir AppDir --plugin qt --custom-apprun=./custom-apprun.sh --output appimage
 
           # Verify QML modules were bundled
           echo "=== Checking bundled QML after linuxdeploy ==="
@@ -143,7 +146,7 @@ jobs:
           # Check the plugins dir
           echo "=== Checking platform plugins ==="
           ls -la ./AppDir/usr/plugins/platforms/ 2>/dev/null || echo "No platform plugins"
-          
+
           # Debug: Show final AppRun
           echo "=== Final AppRun content ==="
           cat ./AppDir/AppRun
