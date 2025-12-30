@@ -17,29 +17,13 @@ jobs:
         with:
           version: "6.8.0"
           target: "desktop"
-          modules: "qtwebengine qtwebchannel qtpositioning qtserialport"
+          modules: "qtwebengine qtwebchannel qtpositioning"
           cache: true
-          tools: "tools_cmake"
 
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-randr0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb-xinput0 libzstd-dev libvulkan-dev libxcb-cursor0 fuse libfuse2 libnss3 libdbus-1-3 libxcomposite1 libxrender1 libxrandr2 libxtst6 libxi6 libasound2 libegl1-mesa-dev fontconfig libxcursor1 libxdamage1 libxss1 libpci3
-
-      - name: Debug Qt paths
-        run: |
-          echo "QT_ROOT_DIR: ${QT_ROOT_DIR}"
-          echo "Qt6_DIR: ${Qt6_DIR}"
-          echo "=== Root directory ==="
-          ls -la "${QT_ROOT_DIR}/" || true
-          echo "=== QML directory ==="
-          ls -la "${QT_ROOT_DIR}/qml/" 2>/dev/null || echo "No qml/ directory at QT_ROOT_DIR"
-          echo "=== Looking for QtWebEngine ==="
-          find "${QT_ROOT_DIR}" -name "*WebEngine*" -type d 2>/dev/null | head -20 || true
-          echo "=== Looking for QtWebEngineProcess ==="
-          find "${QT_ROOT_DIR}" -name "QtWebEngineProcess" 2>/dev/null || true
-          echo "=== Looking for resources ==="
-          find "${QT_ROOT_DIR}" -name "qtwebengine_resources.pak" 2>/dev/null || true
+          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0 libxcb-cursor0 fuse libfuse2 libnss3 libdbus-1-3 libxcomposite1 libxrender1 libxrandr2 libxtst6 libxi6 libasound2 libegl1-mesa-dev
 
       - name: Build
         run: |
@@ -59,132 +43,8 @@ jobs:
           wget -q "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage" -O linuxdeploy-plugin-qt
           chmod +x linuxdeploy linuxdeploy-plugin-qt
 
-          # Find Qt installation base
-          QT_BASE="${QT_ROOT_DIR}"
-          echo "Using QT_BASE: ${QT_BASE}"
-
-          # Copy ALL QML modules from Qt installation
-          mkdir -p ./AppDir/usr/qml
-          if [ -d "${QT_BASE}/qml" ]; then
-            echo "Copying entire QML directory"
-            cp -r "${QT_BASE}/qml/"* ./AppDir/usr/qml/
-          fi
-
-          # Copy WebEngine resources (icudtl.dat, qtwebengine_resources.pak, etc.)
-          mkdir -p ./AppDir/usr/resources
-          if [ -d "${QT_BASE}/resources" ]; then
-            echo "Copying resources from ${QT_BASE}/resources/"
-            cp -r "${QT_BASE}/resources/"* ./AppDir/usr/resources/
-          fi
-
-          # Copy WebEngine translations
-          mkdir -p ./AppDir/usr/translations/qtwebengine_locales
-          if [ -d "${QT_BASE}/translations/qtwebengine_locales" ]; then
-            echo "Copying translations"
-            cp -r "${QT_BASE}/translations/qtwebengine_locales/"* ./AppDir/usr/translations/qtwebengine_locales/
-          fi
-
-          # Copy QtWebEngineProcess helper binary
-          mkdir -p ./AppDir/usr/libexec
-          if [ -f "${QT_BASE}/libexec/QtWebEngineProcess" ]; then
-            echo "Copying QtWebEngineProcess"
-            cp "${QT_BASE}/libexec/QtWebEngineProcess" ./AppDir/usr/libexec/
-          fi
-
-          # Debug: Check what we copied
-          echo "=== Copied QML modules ==="
-          ls -la ./AppDir/usr/qml/ || true
-          ls -la ./AppDir/usr/qml/QtWebEngine/ 2>/dev/null || echo "No QtWebEngine QML"
-          echo "=== Copied resources ==="
-          ls -la ./AppDir/usr/resources/ || true
-
-          # Create custom AppRun wrapper script (linuxdeploy-plugin-qt skips this for Qt6)
-          # Write to current directory first to avoid path issues
-          cat > ./custom-apprun.sh << 'APPRUNEOF'
-          #!/bin/bash
-          SELF=$(readlink -f "$0")
-          HERE=${SELF%/*}
-          export PATH="${HERE}/usr/bin:${PATH}"
-          export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
-          export QT_PLUGIN_PATH="${HERE}/usr/plugins"
-          export QML2_IMPORT_PATH="${HERE}/usr/qml"
-          export QML_IMPORT_PATH="${HERE}/usr/qml"
-          export QTWEBENGINEPROCESS_PATH="${HERE}/usr/libexec/QtWebEngineProcess"
-          export QTWEBENGINE_RESOURCES_PATH="${HERE}/usr/resources"
-          export QTWEBENGINE_LOCALES_PATH="${HERE}/usr/translations/qtwebengine_locales"
-          export QT_QPA_PLATFORM_PLUGIN_PATH="${HERE}/usr/plugins/platforms"
-          # Auto-detect platform: prefer wayland if available, fall back to xcb
-          if [ -z "$QT_QPA_PLATFORM" ]; then
-            if [ -n "$WAYLAND_DISPLAY" ] && [ -f "${HERE}/usr/plugins/platforms/libqwayland.so" ]; then
-              export QT_QPA_PLATFORM=wayland
-            else
-              export QT_QPA_PLATFORM=xcb
-            fi
-          fi
-          exec "${HERE}/usr/bin/appnicol" "$@"
-          APPRUNEOF
-          # Remove leading whitespace from heredoc and make executable
-          sed -i 's/^          //' ./custom-apprun.sh
-          chmod +x ./custom-apprun.sh
-          echo "=== Custom AppRun script ==="
-          cat ./custom-apprun.sh
-
-          # linuxdeploy-plugin-qt environment variables
           export QML_SOURCES_PATHS="${{ github.workspace }}"
-          export EXTRA_QT_PLUGINS="wayland-shell-integration;wayland-graphics-integration-client;wayland-decoration-client;platforms"
-          export QMAKE="${QT_BASE}/bin/qmake"
-          export LD_LIBRARY_PATH="${QT_BASE}/lib:${LD_LIBRARY_PATH}"
-          export DEPLOY_PLATFORM_PLUGINS="1"
-          export NO_STRIP=1
-
-          # Run linuxdeploy to bundle libs WITHOUT creating AppImage yet
-          ./linuxdeploy --appdir AppDir --plugin qt --custom-apprun=./custom-apprun.sh
-
-          # linuxdeploy may have cleared our pre-copied QML, so copy QtWebEngine QML AFTER linuxdeploy
-          echo "=== Re-copying QtWebEngine QML modules after linuxdeploy ==="
-          if [ -d "${QT_BASE}/qml/QtWebEngine" ]; then
-            cp -r "${QT_BASE}/qml/QtWebEngine" ./AppDir/usr/qml/
-          fi
-          if [ -d "${QT_BASE}/qml/QtWebChannel" ]; then
-            cp -r "${QT_BASE}/qml/QtWebChannel" ./AppDir/usr/qml/
-          fi
-
-          # Copy QtWebEngine libraries that the QML plugin needs
-          echo "=== Copying QtWebEngine libraries ==="
-          cp -n "${QT_BASE}/lib/libQt6WebEngine"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
-          cp -n "${QT_BASE}/lib/libQt6WebChannel"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
-          cp -n "${QT_BASE}/lib/libQt6WebEngineCore"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
-          cp -n "${QT_BASE}/lib/libQt6WebEngineQuick"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
-
-          # Explicitly copy wayland plugins (EXTRA_QT_PLUGINS may not work reliably)
-          echo "=== Copying Wayland plugins ==="
-          mkdir -p ./AppDir/usr/plugins/wayland-shell-integration
-          mkdir -p ./AppDir/usr/plugins/wayland-graphics-integration-client
-          mkdir -p ./AppDir/usr/plugins/wayland-decoration-client
-          cp -r "${QT_BASE}/plugins/wayland-shell-integration/"* ./AppDir/usr/plugins/wayland-shell-integration/ 2>/dev/null || true
-          cp -r "${QT_BASE}/plugins/wayland-graphics-integration-client/"* ./AppDir/usr/plugins/wayland-graphics-integration-client/ 2>/dev/null || true
-          cp -r "${QT_BASE}/plugins/wayland-decoration-client/"* ./AppDir/usr/plugins/wayland-decoration-client/ 2>/dev/null || true
-          # Copy wayland platform plugin
-          cp "${QT_BASE}/plugins/platforms/libqwayland"*.so ./AppDir/usr/plugins/platforms/ 2>/dev/null || true
-          # Copy wayland libs
-          cp -n "${QT_BASE}/lib/libQt6Wayland"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
-          cp -n "${QT_BASE}/lib/libQt6WaylandClient"*.so* ./AppDir/usr/lib/ 2>/dev/null || true
-
-          # Verify QML modules were bundled
-          echo "=== Checking bundled QML after re-copy ==="
-          ls -la ./AppDir/usr/qml/QtWebEngine/ 2>/dev/null || echo "WARNING: QtWebEngine QML still missing!"
-          find ./AppDir/usr/qml -name "*.qmltypes" -o -name "qmldir" | head -20
-
-          # Check the plugins dir
-          echo "=== Checking platform plugins ==="
-          ls -la ./AppDir/usr/plugins/platforms/ 2>/dev/null || echo "No platform plugins"
-
-          # Debug: Show final AppRun
-          echo "=== Final AppRun content ==="
-          cat ./AppDir/AppRun
-
-          # NOW create the AppImage with everything in place
-          ./linuxdeploy --appdir AppDir --output appimage
+          ./linuxdeploy --appdir AppDir --plugin qt --output appimage
 
           mv *.AppImage Nicol-Browser-Linux.AppImage
 
@@ -204,7 +64,7 @@ jobs:
         with:
           version: "6.8.0"
           arch: "win64_msvc2022_64"
-          modules: "qtwebengine qtwebchannel qtpositioning qtserialport"
+          modules: "qtwebengine qtwebchannel qtpositioning"
 
       - uses: ilammy/msvc-dev-cmd@v1
 
@@ -245,7 +105,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.0"
-          modules: "qtwebengine qtwebchannel qtpositioning qtserialport"
+          modules: "qtwebengine qtwebchannel qtpositioning"
 
       - name: Build
         run: |
