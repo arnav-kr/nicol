@@ -21,17 +21,26 @@ A minimal web browser based on Qt.
 * Background tab freezing for reduced resource usage
 * Built-in PDF viewer
 
-## Requirements
+## Installation
+
+Install Nicol Browser from [AUR](https://aur.archlinux.org/packages/nicol/)
+```bash
+yay -S nicol
+```
+
+## Building from Source
+
+### Requirements
 * Qt 6.8 or later
 * CMake 3.16 or later
 * C++17 compatible compiler
 
-### Arch Linux
+#### Arch Linux
 ```bash
 sudo pacman -S base-devel cmake qt6-webengine qt6-declarative
 ```
 
-### Debian/Ubuntu
+#### Debian/Ubuntu
 > **Note:** Ubuntu's official repositories only provide Qt 6.4, which is below the required 6.8. You'll need to install Qt 6.8 manually using the [Qt Online Installer](https://www.qt.io/download-qt-installer) or [aqtinstall](https://github.com/miurahr/aqtinstall).
 
 ```bash
@@ -39,20 +48,20 @@ sudo apt install build-essential cmake
 # Then install Qt 6.8+ via Qt Online Installer or aqtinstall
 ```
 
-### Fedora
+#### Fedora
 ```bash
 sudo dnf install cmake qt6-qtwebengine-devel qt6-qtdeclarative-devel
 ```
 
-### macOS
+##### macOS
 ```bash
 brew install qt@6 cmake
 ```
 
-### Windows
+##### Windows
 Install Qt 6.8 with MSVC 2022 components via the Qt Online Installer. Ensure CMake and MSVC build tools are available.
 
-## Building
+### Building
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
@@ -60,7 +69,7 @@ cmake --build build --parallel
 
 The executable will be at `build/appnicol` (Linux/macOS) or `build/Release/appnicol.exe` (Windows).
 
-## Running
+### Running
 ```bash
 ./build/appnicol
 ```
