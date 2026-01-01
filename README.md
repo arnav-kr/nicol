@@ -10,6 +10,7 @@ A minimal web browser based on Qt.
 
 <!-- ![Build Status](https://github.com/arnav-kr/nicol/actions/workflows/build.yaml/badge.svg) -->
 
+![Screenshot of Nicol Browser](assets/images/screenshot.png)
 
 
 ## Features
