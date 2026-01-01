@@ -85,3 +85,8 @@ CMakeLists.txt.user*
 .cache/
 compile_commands.json
 ref
+
+# packaging
+packaging/aur/*
+!packaging/aur/PKGBUILD
+!packaging/aur/.SRCINFO
