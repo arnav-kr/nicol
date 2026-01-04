@@ -38,7 +38,7 @@ yay -S nicol
 
 #### Arch Linux
 ```bash
-sudo pacman -S base-devel cmake qt6-webengine qt6-declarative
+sudo pacman -S base-devel cmake qt6-base qt6-webengine qt6-declarative hicolor-icon-theme
 ```
 
 #### Debian/Ubuntu
